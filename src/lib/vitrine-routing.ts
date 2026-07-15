@@ -7,7 +7,7 @@
  * resolve `*.localhost` to 127.0.0.1 automatically.
  */
 
-const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin"]);
+const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "admin", "schooly"]);
 
 /**
  * Returns the school slug if the current hostname is `slug.something`,
@@ -49,11 +49,15 @@ export function buildVitrineUrl(
 ): string {
   const { protocol, hostname, port } = window.location;
 
-  // Strip the leading subdomain so we always anchor to the root domain.
+  // Strip the leading subdomain only if it's a vitrine slug (not reserved),
+  // so we always anchor to the admin domain.
   let root = hostname;
   if (hostname !== "localhost" && !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     const parts = hostname.split(".");
-    root = parts.length > 2 ? parts.slice(1).join(".") : hostname;
+    const candidate = parts[0];
+    if (parts.length > 2 && candidate && !RESERVED_SUBDOMAINS.has(candidate)) {
+      root = parts.slice(1).join(".");
+    }
   }
 
   const portPart = port ? `:${port}` : "";

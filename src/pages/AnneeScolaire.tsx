@@ -63,6 +63,7 @@ import {
   useCreateJourFerie,
   useDeleteJourFerie,
 } from "@/hooks/useAnneeScolaire";
+import { useAnneeContext } from "@/hooks/useAnneeContext";
 import { usePassages, useCreatePassage, useBulkCreatePassages } from "@/hooks/usePassages";
 import { useAllStudents } from "@/hooks/useStudents";
 import { useNiveaux } from "@/hooks/useNiveaux";
@@ -136,6 +137,9 @@ export default function AnneeScolairePage() {
   const [deleteVacanceId, setDeleteVacanceId] = useState<string | null>(null);
   const [deleteJourFerieId, setDeleteJourFerieId] = useState<string | null>(null);
 
+  // Confirm change current year
+  const [confirmAnneeTarget, setConfirmAnneeTarget] = useState<AnneeScolaire | null>(null);
+
   // Passage form
   const [passageFormOpen, setPassageFormOpen] = useState(false);
   const [passageForm, setPassageForm] = useState({
@@ -167,6 +171,7 @@ export default function AnneeScolairePage() {
     const active = annees.find((a) => a.active) ?? annees[0];
     if (active) setSelectedAnneeId(active.id);
   }, [annees, selectedAnneeId]);
+  const { selectedAnnee: globalAnnee, setSelectedAnnee: setGlobalAnnee } = useAnneeContext();
   const createAnneeMutation = useCreateAnneeScolaire();
   const updateAnneeMutation = useUpdateAnneeScolaire();
   const cloturerMutation = useCloturerAnneeScolaire();
@@ -393,7 +398,9 @@ export default function AnneeScolairePage() {
             className={`rounded-xl border p-4 shadow-sm cursor-pointer transition-all hover:shadow-md ${
               selectedAnneeId === annee.id
                 ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                : "border-border/50 bg-card"
+                : globalAnnee?.id === annee.id
+                  ? "border-primary/50 bg-primary/[0.03] ring-1 ring-primary/10"
+                  : "border-border/50 bg-card"
             }`}
             onClick={() => setSelectedAnneeId(annee.id)}
           >
@@ -403,6 +410,9 @@ export default function AnneeScolairePage() {
                 <span className="font-heading font-bold text-foreground">{annee.label}</span>
               </div>
               <div className="flex items-center gap-1">
+                {globalAnnee?.id === annee.id && (
+                  <Badge className="bg-primary text-primary-foreground shadow-sm">Courante</Badge>
+                )}
                 {annee.active && (
                   <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
                 )}
@@ -419,6 +429,11 @@ export default function AnneeScolairePage() {
               {new Date(annee.dateFin).toLocaleDateString("fr-FR")}
             </p>
             <div className="flex items-center gap-1 mt-3">
+              {globalAnnee?.id !== annee.id && (
+                <Button size="sm" className="h-8 px-3 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm" onClick={(e) => { e.stopPropagation(); setConfirmAnneeTarget(annee); }}>
+                  Definir comme courante
+                </Button>
+              )}
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEditAnnee(annee); }}>
                 <Edit className="h-3.5 w-3.5" />
               </Button>
@@ -1201,6 +1216,26 @@ export default function AnneeScolairePage() {
             <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
             <Button variant="destructive" onClick={() => { if (deleteVacanceId !== null) deleteVacanceMutation.mutate(deleteVacanceId, { onSuccess: () => setDeleteVacanceId(null) }); }} disabled={deleteVacanceMutation.isPending}>
               {deleteVacanceMutation.isPending ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm change current year */}
+      <Dialog open={confirmAnneeTarget !== null} onOpenChange={(open) => !open && setConfirmAnneeTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Changer l'annee courante</DialogTitle>
+            <DialogDescription>
+              Attention : toutes les donnees affichees (eleves, notes, finances, etc.)
+              seront celles de l'annee <strong>{confirmAnneeTarget?.label}</strong>.
+              Voulez-vous continuer ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+            <Button onClick={() => { if (confirmAnneeTarget) setGlobalAnnee(confirmAnneeTarget); setConfirmAnneeTarget(null); }}>
+              Confirmer
             </Button>
           </DialogFooter>
         </DialogContent>

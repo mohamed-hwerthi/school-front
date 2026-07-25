@@ -45,7 +45,10 @@ export default function VitrineSite() {
     );
   }
 
-  const { config, pages = [], announcements = [], gallery = [] } = data;
+  const config = data?.config ?? ({} as any);
+  const pages = data?.pages ?? [];
+  const announcements = data?.announcements ?? [];
+  const gallery = data?.gallery ?? [];
 
   // Find active page — default to first page if no pageSlug
   const activePage = pageSlug

@@ -155,7 +155,7 @@ export default function FeuillesJourPage() {
                     <Button
                       size="sm"
                       className="flex-1"
-                      onClick={() => navigate("/dashboard/absences/appel")}
+                      onClick={() => navigate(`/dashboard/absences/appel?classeId=${f.classeId}&date=${date}`)}
                     >
                       Faire l'appel
                     </Button>

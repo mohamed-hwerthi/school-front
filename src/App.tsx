@@ -43,6 +43,12 @@ const Niveaux = lazy(() => import("./pages/Niveaux"));
 const SchoolInfo = lazy(() => import("./pages/SchoolInfo"));
 const FinancePaiement = lazy(() => import("./pages/FinancePaiement"));
 const CarnetNotes = lazy(() => import("./pages/CarnetNotes"));
+const SaisieNotesPage = lazy(() => import("./pages/SaisieNotes"));
+const ApercuNotesPage = lazy(() => import("./pages/ApercuNotes"));
+const MoyennesPage = lazy(() => import("./pages/MoyennesPage"));
+const DomainesPage = lazy(() => import("./pages/Domaines"));
+const ModulesPage = lazy(() => import("./pages/Modules"));
+const ExamensPage = lazy(() => import("./pages/Examens"));
 // const Rapports = lazy(() => import("./pages/Rapports"));
 const Circulaires = lazy(() => import("./pages/Circulaires"));
 const Configuration = lazy(() => import("./pages/Configuration"));
@@ -77,6 +83,7 @@ const VitrineSite = lazy(() => import("./pages/VitrineSite"));
 const VitrineAdminPage = lazy(() => import("./pages/VitrineAdmin"));
 
 // Bulletin pages
+const BulletinsIndividuelsPage = lazy(() => import("./pages/BulletinsIndividuels"));
 const BulletinsMassePage = lazy(() => import("./pages/BulletinsMasse"));
 const BulletinsAnnuelsPage = lazy(() => import("./pages/BulletinsAnnuels"));
 const StatsReussitePage = lazy(() => import("./pages/StatsReussite"));
@@ -108,7 +115,6 @@ const QuizManagementPage = lazy(() => import("./pages/QuizManagement"));
 const QuizPassationPage = lazy(() => import("./pages/QuizPassation"));
 
 // Board 19: RH
-const PaiePage = lazy(() => import("./pages/Paie"));
 const FormationsPage = lazy(() => import("./pages/Formations"));
 const TeacherEvaluationsPage = lazy(() => import("./pages/TeacherEvaluations"));
 
@@ -263,8 +269,13 @@ const App = () => (
               <Route path="factures" element={<G roles={FINANCE_ROLES}><FacturesPage /></G>} />
 
               {/* Pédagogie */}
-              <Route path="evaluations" element={<Navigate to="/dashboard/carnets?tab=examens" replace />} />
-              <Route path="carnets" element={<G roles={[...STAFF_ROLES, "PARENT"]}><CarnetNotes /></G>} />
+              <Route path="evaluations" element={<Navigate to="/dashboard/examens" replace />} />
+              <Route path="saisie-notes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><SaisieNotesPage /></G>} />
+              <Route path="apercu-notes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ApercuNotesPage /></G>} />
+              <Route path="moyennes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><MoyennesPage /></G>} />
+              <Route path="domaines" element={<G roles={[...STAFF_ROLES, "PARENT"]}><DomainesPage /></G>} />
+              <Route path="modules" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ModulesPage /></G>} />
+              <Route path="examens" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ExamensPage /></G>} />
               <Route path="annee-scolaire" element={<G roles={MANAGEMENT_ROLES}><AnneeScolairePage /></G>} />
               <Route path="conseil-classe" element={<G roles={MANAGEMENT_ROLES}><ConseilClassePage /></G>} />
               <Route path="bilan-annuel" element={<G roles={MANAGEMENT_ROLES}><BilanAnnuelPage /></G>} />
@@ -275,6 +286,7 @@ const App = () => (
               <Route path="calendrier" element={<S><CalendrierPage /></S>} />
 
               {/* Bulletins */}
+              <Route path="bulletins-individuels" element={<G roles={MANAGEMENT_ROLES}><BulletinsIndividuelsPage /></G>} />
               <Route path="bulletins-masse" element={<G roles={MANAGEMENT_ROLES}><BulletinsMassePage /></G>} />
               <Route path="bulletins-annuels" element={<G roles={MANAGEMENT_ROLES}><BulletinsAnnuelsPage /></G>} />
               <Route path="stats-reussite" element={<G roles={MANAGEMENT_ROLES}><StatsReussitePage /></G>} />
@@ -301,7 +313,6 @@ const App = () => (
 
               {/* RH & Personnel */}
               <Route path="contrats" element={<G roles={MANAGEMENT_ROLES}><ContratsPage /></G>} />
-              <Route path="rh/paie" element={<G roles={MANAGEMENT_ROLES}><PaiePage /></G>} />
               <Route path="rh/formations" element={<G roles={MANAGEMENT_ROLES}><FormationsPage /></G>} />
               <Route path="teacher-evaluations" element={<G roles={MANAGEMENT_ROLES}><TeacherEvaluationsPage /></G>} />
 

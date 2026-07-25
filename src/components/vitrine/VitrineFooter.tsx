@@ -5,7 +5,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  MessageCircle,
   ArrowUpRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -34,14 +33,6 @@ export default function VitrineFooter({ config, pages = [] }: Props) {
       icon: Instagram,
       label: "Instagram",
       color: "#E4405F",
-    },
-    {
-      url: config.whatsappNumber
-        ? `https://wa.me/${config.whatsappNumber.replace(/\D/g, "")}`
-        : null,
-      icon: MessageCircle,
-      label: "WhatsApp",
-      color: "#25D366",
     },
   ].filter((s) => s.url);
 

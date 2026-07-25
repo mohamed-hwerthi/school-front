@@ -16,7 +16,6 @@ import {
   User,
   MessageSquare,
   Search,
-  Bell,
   Maximize,
   Minimize,
   Settings,
@@ -190,18 +189,6 @@ export function Navbar() {
           <MessageSquare className="h-3 w-3" />
           4035 SMS
         </Badge>
-
-        {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative h-8 w-8 rounded-full hover:bg-muted/60 transition-all"
-        >
-          <Bell className="h-4 w-4 text-muted-foreground" />
-          <span className="absolute -top-0.5 -end-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-background">
-            3
-          </span>
-        </Button>
 
         {/* Public school website */}
         {(user?.tenantSlug || user?.tenantId) && (

@@ -57,6 +57,7 @@ const PREF_HORAIRE_LABELS: Record<(typeof PREFERENCES_HORAIRES)[number], string>
 
 const emptyForm: ModuleRequest = {
   name: "",
+  nameAr: "",
   nameVp: "",
   coeffEtatique: 1,
   coeffPrive: 1,
@@ -121,6 +122,7 @@ export default function ModulesTab() {
     setEditId(m.id);
     setForm({
       name: m.name,
+      nameAr: m.nameAr || "",
       nameVp: m.nameVp || "",
       coeffEtatique: m.coeffEtatique,
       coeffPrive: m.coeffPrive,
@@ -271,6 +273,9 @@ export default function ModulesTab() {
                   <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">
                     Nom VP
                   </th>
+                  <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden xl:table-cell">
+                    Nom arabe
+                  </th>
                   <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                     Coeff. É
                   </th>
@@ -300,7 +305,7 @@ export default function ModulesTab() {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={canManage ? 10 : 9}
+                      colSpan={canManage ? 11 : 10}
                       className="py-16 text-center text-muted-foreground"
                     >
                       Chargement...
@@ -309,7 +314,7 @@ export default function ModulesTab() {
                 ) : filteredModules.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={canManage ? 10 : 9}
+                      colSpan={canManage ? 11 : 10}
                       className="py-16 text-center text-muted-foreground"
                     >
                       <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
@@ -341,6 +346,9 @@ export default function ModulesTab() {
                       </td>
                       <td className="py-3 px-4 text-muted-foreground hidden md:table-cell">
                         {m.nameVp || "—"}
+                      </td>
+                      <td className="py-3 px-4 font-arabic hidden xl:table-cell" dir="rtl">
+                        {m.nameAr || "—"}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {m.coeffEtatique}
@@ -415,6 +423,16 @@ export default function ModulesTab() {
                   value={form.nameVp || ""}
                   onChange={(e) => setForm({ ...form, nameVp: e.target.value })}
                   placeholder="Version privée"
+                />
+              </div>
+              <div>
+                <Label>Nom en arabe</Label>
+                <Input
+                  value={form.nameAr || ""}
+                  onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
+                  placeholder="الاسم بالعربية"
+                  dir="rtl"
+                  className="font-arabic"
                 />
               </div>
             </div>

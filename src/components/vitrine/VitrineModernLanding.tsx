@@ -23,7 +23,6 @@ import {
   ChevronRight,
   Facebook,
   Instagram,
-  MessageCircle,
   Clock,
   Calendar,
   CheckCircle2,
@@ -1083,7 +1082,6 @@ function ContactShowcase({ config, slug }: { config: VitrineConfig; slug: string
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   const cleanPhone = config.contactPhone?.replace(/\D/g, "") ?? "";
-  const cleanWhats = config.whatsappNumber?.replace(/\D/g, "") ?? "";
 
   return (
     <section id="contact" ref={ref} className="bg-[#0F172A] px-6 py-28 text-white lg:px-8">
@@ -1148,9 +1146,6 @@ function ContactShowcase({ config, slug }: { config: VitrineConfig; slug: string
               )}
               {config.instagramUrl && (
                 <SocialPill href={config.instagramUrl} icon={Instagram} label="Instagram" color="#E4405F" />
-              )}
-              {cleanWhats && (
-                <SocialPill href={`https://wa.me/${cleanWhats}`} icon={MessageCircle} label="WhatsApp" color="#25D366" />
               )}
             </div>
           </div>

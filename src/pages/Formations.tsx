@@ -54,6 +54,7 @@ import {
 } from "@/hooks/useRh";
 import { useTeachers } from "@/hooks/useTeachers";
 import { useAllUsers } from "@/hooks/useUsers";
+import { usePersonnelList } from "@/hooks/usePersonnel";
 import type {
   Formation,
   CreateFormationRequest,
@@ -140,6 +141,7 @@ export default function FormationsPage() {
   // Backing data for the participant employé selector
   const { teachers } = useTeachers();
   const { data: allUsers = [] } = useAllUsers();
+  const { data: personnelList = [] } = usePersonnelList();
 
   // Candidates depend on the chosen employeType
   const employeCandidates = useMemo(() => {
@@ -157,14 +159,13 @@ export default function FormationsPage() {
           label: `${u.firstName} ${u.lastName} — ${u.role}`,
         }));
     }
-    // PERSONNEL: comptables for now
-    return allUsers
-      .filter((u) => u.role === "COMPTABLE")
-      .map((u) => ({
-        id: u.id,
-        label: `${u.firstName} ${u.lastName} — ${u.role}`,
+    return personnelList
+      .filter((p) => p.statut === "Actif")
+      .map((p) => ({
+        id: p.id,
+        label: `${p.prenom} ${p.nom}${p.fonction ? ` — ${p.fonction}` : ""}`,
       }));
-  }, [participantForm.employeType, teachers, allUsers]);
+  }, [participantForm.employeType, teachers, allUsers, personnelList]);
 
   const filtered = useMemo(() => {
     let list = formations;
@@ -812,7 +813,18 @@ export default function FormationsPage() {
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">
-                          #{p.employeId}
+                          {(() => {
+                            if (p.employeType === "ENSEIGNANT") {
+                              const t = teachers.find(t => t.id === p.employeId);
+                              return t ? `${t.prenom} ${t.nom}` : `#${p.employeId.slice(0, 8)}`;
+                            }
+                            if (p.employeType === "PERSONNEL") {
+                              const pers = personnelList.find(pp => pp.id === p.employeId);
+                              return pers ? `${pers.prenom} ${pers.nom}` : `#${p.employeId.slice(0, 8)}`;
+                            }
+                            const u = allUsers.find(u => u.id === p.employeId);
+                            return u ? `${u.firstName} ${u.lastName}` : `#${p.employeId.slice(0, 8)}`;
+                          })()}
                         </span>
                         <Badge variant="outline" className="text-[10px]">
                           {p.employeType}

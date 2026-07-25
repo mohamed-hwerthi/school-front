@@ -8,7 +8,6 @@ import VitrineModernLanding from "@/components/vitrine/VitrineModernLanding";
 import VitrineContactForm from "@/components/vitrine/VitrineContactForm";
 import VitrineSEO from "@/components/vitrine/VitrineSEO";
 import VitrinePreviewBanner from "@/components/vitrine/VitrinePreviewBanner";
-import VitrineWhatsAppButton from "@/components/vitrine/VitrineWhatsAppButton";
 import VitrineSkeleton from "@/components/vitrine/VitrineSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -107,9 +106,6 @@ export default function VitrineSite() {
       </main>
 
       <VitrineFooter config={config} />
-
-      {/* Floating WhatsApp button */}
-      <VitrineWhatsAppButton config={config} />
     </div>
   );
 }

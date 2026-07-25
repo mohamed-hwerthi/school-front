@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, ClipboardCheck, Loader2, Save, Users, UserCheck, UserX, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -32,11 +32,12 @@ const SEANCES = [
 
 export default function AppelAbsencePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const today = new Date().toISOString().split("T")[0];
 
   const [niveau, setNiveau] = useState<string>("");
   const [classeId, setClasseId] = useState<string>("");
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(searchParams.get("date") || today);
   const [seance, setSeance] = useState<string>(SEANCES[0]);
 
   const [statuts, setStatuts] = useState<Record<string, Statut>>({});
@@ -45,6 +46,17 @@ export default function AppelAbsencePage() {
   const { data: classes = [] } = useClasses();
   const { data: allStudents = [] } = useAllStudents();
   const batchMutation = useBatchCreateAbsences();
+
+  useEffect(() => {
+    const urlClasseId = searchParams.get("classeId");
+    if (urlClasseId && classes.length > 0) {
+      const found = classes.find((c) => String(c.id) === urlClasseId);
+      if (found) {
+        setNiveau(found.niveauName);
+        setClasseId(urlClasseId);
+      }
+    }
+  }, [searchParams, classes]);
 
   const niveauOptions = useMemo(
     () => [...new Set(classes.map((c) => c.niveauName).filter(Boolean))].sort(),
@@ -108,7 +120,7 @@ export default function AppelAbsencePage() {
       {
         onSuccess: () => {
           toast.success(`Feuille enregistrée : ${absences.length} ${absences.length > 1 ? "élèves" : "élève"} marqués`);
-          navigate("/dashboard/absences");
+          navigate("/dashboard/absences/feuilles");
         },
         onError: (err: Error & { response?: { data?: { message?: string } } }) => {
           toast.error(err.response?.data?.message ?? "Erreur lors de l'enregistrement");
@@ -126,7 +138,7 @@ export default function AppelAbsencePage() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/absences")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/absences/feuilles")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -145,7 +157,7 @@ export default function AppelAbsencePage() {
             value={niveau || undefined}
             onValueChange={(v) => {
               setNiveau(v);
-              setClasseId(0);
+              setClasseId("");
               setStatuts({});
               setHeuresArrivee({});
             }}

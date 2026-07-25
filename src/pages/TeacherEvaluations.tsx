@@ -114,7 +114,7 @@ export default function TeacherEvaluationsPage() {
   ];
 
   // 0 = "all teachers" (default view: list every teacher's evaluations)
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | number>(0);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | number | null>(null);
   const [anneeScolaire, setAnneeScolaire] = useState(getSelectedAnneeScolaire());
   const [activeTab, setActiveTab] = useState("evaluations");
 
@@ -285,7 +285,7 @@ export default function TeacherEvaluationsPage() {
         </Label>
         <Select
           value={selectedTeacherId ? String(selectedTeacherId) : "all"}
-          onValueChange={(v) => setSelectedTeacherId(v === "all" ? 0 : v)}
+          onValueChange={(v) => setSelectedTeacherId(v === "all" ? null : v)}
         >
           <SelectTrigger className="w-full max-w-md">
             <SelectValue placeholder={t("teacherEval.chooseTeacher")} />

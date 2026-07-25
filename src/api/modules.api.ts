@@ -17,6 +17,7 @@ export type PreferenceHoraire = (typeof PREFERENCES_HORAIRES)[number];
 export interface ModuleDTO {
   id: string;
   name: string;
+  nameAr: string | null;
   nameVp: string | null;
   coeffEtatique: number;
   coeffPrive: number;
@@ -38,6 +39,7 @@ export interface ModuleDTO {
 
 export interface ModuleRequest {
   name: string;
+  nameAr?: string;
   nameVp?: string;
   coeffEtatique: number;
   coeffPrive: number;

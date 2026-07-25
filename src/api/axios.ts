@@ -11,19 +11,23 @@ const api = axios.create({
 
 // Request interceptor — attach tenant + auth token
 api.interceptors.request.use((config) => {
-  // Multi-tenant header — prefer the logged-in user's tenant; fall back to build-time default
-  let tenantId: string | undefined = env.TENANT_ID;
-  try {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser) as { tenantId?: string };
-      if (parsed?.tenantId) tenantId = parsed.tenantId;
+  // Login operates on public schema — no tenant header.
+  const isAuthPath = config.url?.includes("/auth/");
+  if (!isAuthPath) {
+    // Multi-tenant header — prefer the logged-in user's tenant; fall back to build-time default
+    let tenantId: string | undefined = env.TENANT_ID;
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser) as { tenantId?: string };
+        if (parsed?.tenantId) tenantId = parsed.tenantId;
+      }
+    } catch {
+      // ignore — fall back to env default
     }
-  } catch {
-    // ignore — fall back to env default
-  }
-  if (tenantId) {
-    config.headers["X-Tenant-ID"] = tenantId;
+    if (tenantId) {
+      config.headers["X-Tenant-ID"] = tenantId;
+    }
   }
 
   // Auth token

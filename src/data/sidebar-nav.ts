@@ -44,6 +44,8 @@ import {
   FileDown,
   Target,
   Lock,
+  LayoutGrid,
+  PenLine,
 } from "lucide-react";
 
 /**
@@ -110,7 +112,6 @@ export const sidebarSections: NavSection[] = [
       { title: "Personnel", titleKey: "nav.personnel", icon: Users, url: "/dashboard/personnel" },
       { title: "Affectations", titleKey: "nav.assignments", icon: ClipboardList, url: "/dashboard/affectations" },
       { title: "Contrats & Congés", titleKey: "nav.contractsLeaves", icon: Briefcase, url: "/dashboard/contrats" },
-      { title: "Paie", titleKey: "nav.payroll", icon: Banknote, url: "/dashboard/rh/paie" },
       { title: "Formations", titleKey: "nav.training", icon: Award, url: "/dashboard/rh/formations" },
       { title: "Évaluations", titleKey: "nav.teacherEvaluations", icon: UserCog, url: "/dashboard/teacher-evaluations" },
     ],
@@ -122,16 +123,22 @@ export const sidebarSections: NavSection[] = [
     color: "text-purple-500",
     items: [
       { title: "Devoirs", titleKey: "nav.homework", icon: PenTool, url: "/dashboard/devoirs", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Carnets de notes", titleKey: "nav.gradeBooks", icon: BookOpen, url: "/dashboard/carnets", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Domaines", titleKey: "nav.domains", icon: Palette, url: "/dashboard/domaines", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Matières", titleKey: "nav.subjects", icon: Library, url: "/dashboard/modules", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Examens", titleKey: "nav.exams", icon: FileQuestion, url: "/dashboard/examens", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Aperçu des notes", titleKey: "nav.gradesOverview", icon: LayoutGrid, url: "/dashboard/apercu-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Saisie des notes", titleKey: "nav.gradeEntry", icon: PenLine, url: "/dashboard/saisie-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Moyennes", titleKey: "nav.averages", icon: BarChart3, url: "/dashboard/moyennes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
     ],
   },
   {
-    label: "Bulletins",
+    label: "Bulletin et certificat",
     labelKey: "nav.bulletins",
     icon: Printer,
     color: "text-indigo-500",
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
+      { title: "Bulletins individuels", titleKey: "nav.gradeBooks", icon: FileText, url: "/dashboard/bulletins-individuels" },
       { title: "Impression masse", titleKey: "nav.bulkPrint", icon: Printer, url: "/dashboard/bulletins-masse" },
       { title: "Stats réussite", titleKey: "nav.successStats", icon: TrendingUp, url: "/dashboard/stats-reussite" },
       { title: "Comparatif", titleKey: "nav.comparative", icon: Activity, url: "/dashboard/comparatif" },

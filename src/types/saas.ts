@@ -10,6 +10,7 @@ export interface TenantOnboardingRequest {
   adminPassword: string;
   plan: string;
   contactPhone?: string;
+  smsCredits?: number;
 }
 
 export interface TenantPlan {
@@ -63,4 +64,6 @@ export interface TenantResponse {
   monthlyRate: number;
   trialEndsAt: string;
   onboardingCompleted: boolean;
+  smsCredits: number;
+  smsCreditsUsed: number;
 }

@@ -1,7 +1,6 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,8 +13,6 @@ import {
 import {
   LogOut,
   User,
-  MessageSquare,
-  Search,
   Maximize,
   Minimize,
   Settings,
@@ -166,29 +163,9 @@ export function Navbar() {
         </>
       )}
 
-      {/* Search Bar - Center */}
-      <div className="hidden lg:flex items-center mx-auto">
-        <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/60 transition-colors cursor-pointer w-64">
-          <Search className="h-3.5 w-3.5" />
-          <span className="flex-1">{t("common.searchPlaceholder")}</span>
-          <kbd className="hidden xl:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background/80 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-            Ctrl+K
-          </kbd>
-        </div>
-      </div>
-
       <div className="ms-auto flex items-center gap-1.5">
         {/* Language Toggle */}
         <LanguageSwitcher />
-
-        {/* SMS Badge */}
-        <Badge
-          variant="secondary"
-          className="hidden md:flex gap-1.5 text-xs font-normal rounded-full px-3 py-1 bg-muted/50 hover:bg-muted/70 transition-colors"
-        >
-          <MessageSquare className="h-3 w-3" />
-          4035 SMS
-        </Badge>
 
         {/* Public school website */}
         {(user?.tenantSlug || user?.tenantId) && (

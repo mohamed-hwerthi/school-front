@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,7 @@ export default function Onboarding() {
     adminPassword: "",
     plan: "FREE",
     contactPhone: "",
+    smsCredits: 0,
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const onboard = useOnboard();
@@ -247,6 +249,23 @@ export default function Onboarding() {
                 <div>
                   <h2 className="font-heading text-lg font-bold">{t("onboarding.choosePlan")}</h2>
                   <p className="text-sm text-muted-foreground mt-1">{t("onboarding.canChangeLater")}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-1.5 mb-3">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    Credits SMS offerts
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={form.smsCredits ?? 0}
+                    onChange={(e) => setForm((prev) => ({ ...prev, smsCredits: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                    className="max-w-[200px]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Nombre de credits SMS alloues a cette ecole (0 = pas de SMS)
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {PLANS.map((plan) => (

@@ -1,9 +1,22 @@
 {
-  "name": "EcoleNet - Gestion Scolaire",
-  "short_name": "EcoleNet",
-  "description": "Système de gestion scolaire",
+  "name": "SchoolSys - Gestion Scolaire",
+  "short_name": "SchoolSys",
+  "description": "Système de gestion scolaire multi-tenant",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#7c3aed"
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
 }

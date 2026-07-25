@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { notify } from "@/lib/toast";
 import { integrationsApi } from "@/api/integrations.api";
+import { useMySmsCredits } from "@/hooks/useSmsCredits";
 import type { Student } from "@/types/student";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send } from "lucide-react";
+import { Send, MessageSquare } from "lucide-react";
 import { CURRENCY } from "@/config/currency";
 
 interface CommunicationDialogProps {
@@ -71,6 +72,7 @@ export function CommunicationDialog({
   const [objet, setObjet] = useState("");
   const [contenu, setContenu] = useState("");
   const [sending, setSending] = useState(false);
+  const { data: smsCredits } = useMySmsCredits();
 
   const applyTemplate = (templateIdx: string) => {
     const t = templates[Number(templateIdx)];
@@ -108,6 +110,11 @@ export function CommunicationDialog({
     setSending(true);
     try {
       if (type === "SMS") {
+        if (smsCredits && smsCredits.remaining <= 0) {
+          notify.error("Credits SMS epuises. Contactez l'administrateur.");
+          setSending(false);
+          return;
+        }
         await integrationsApi.sendSms({
           phoneNumber: student.telephoneParent!.trim(),
           message: contenu,
@@ -159,6 +166,16 @@ export function CommunicationDialog({
                 }`
               : ""}
           </DialogDescription>
+          {type === "SMS" && smsCredits && (
+            <div className={`flex items-center gap-1.5 mt-2 rounded-lg px-3 py-1.5 text-xs font-medium ${
+              smsCredits.remaining <= 0
+                ? "bg-red-50 text-red-700"
+                : "bg-muted"
+            }`}>
+              <MessageSquare className="h-3.5 w-3.5" />
+              Credits SMS: {smsCredits.remaining}/{smsCredits.totalCredits}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-4 mt-2">

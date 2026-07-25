@@ -45,12 +45,12 @@ export default function VitrineSite() {
     );
   }
 
-  const { config, pages, announcements, gallery } = data;
+  const { config, pages = [], announcements = [], gallery = [] } = data;
 
   // Find active page — default to first page if no pageSlug
   const activePage = pageSlug
     ? pages.find((p) => p.slug === pageSlug)
-    : pages[0];
+    : pages?.[0];
 
   if (!activePage) {
     return (

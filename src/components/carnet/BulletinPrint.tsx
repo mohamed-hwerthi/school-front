@@ -13,11 +13,39 @@ interface Props {
 
 const TRIMESTRE_AR = ["الثلاثي الأول", "الثلاثي الثاني", "الثلاثي الثالث"];
 
-// Tunisian primary "Étatique" colors (sampled from the official template)
-const TEAL = "#1ca0c1";
-const TEAL_DARK = "#157d9b";
-const TEAL_LIGHT = "#e8f4f8";
-const BORDER = "#9bd2e2";
+// ── Thèmes par version ─────────────────────────────────────────────────
+// Étatique : teal clair (modèle officiel tunisien).
+// Privée   : bleu royal / indigo + en-tête de tableau sombre + lignes zébrées.
+interface BulletinTheme {
+  primary: string;
+  dark: string;
+  light: string;
+  border: string;
+  subRowBg: string;
+  zebra: boolean;
+}
+
+const THEME_ETATIQUE: BulletinTheme = {
+  primary: "#1ca0c1",
+  dark: "#157d9b",
+  light: "#e8f4f8",
+  border: "#9bd2e2",
+  subRowBg: "#f4fafc",
+  zebra: false,
+};
+
+const THEME_PRIVE: BulletinTheme = {
+  primary: "#2563eb",
+  dark: "#1e40af",
+  light: "#dbeafe",
+  border: "#93c5fd",
+  subRowBg: "#eff6ff",
+  zebra: true,
+};
+
+function getTheme(version?: string): BulletinTheme {
+  return version === "prive" ? THEME_PRIVE : THEME_ETATIQUE;
+}
 
 export default function BulletinPrint({
   bulletin,
@@ -29,6 +57,8 @@ export default function BulletinPrint({
   delegationRegionale = "باجة",
 }: Props) {
   const b = bulletin;
+  const theme = getTheme(b.version);
+  const isPrive = b.version === "prive";
   const trimestreAr = TRIMESTRE_AR[b.trimestre - 1] ?? TRIMESTRE_AR[0];
   const ecoleAr = schoolNameAr || schoolName;
   const studentDisplayName = b.studentNameAr || b.studentName;
@@ -54,7 +84,7 @@ export default function BulletinPrint({
     >
       <div
         style={{
-          border: `1.5px solid ${TEAL}`,
+          border: `1.5px solid ${theme.primary}`,
           borderRadius: "4mm",
           padding: "3mm 4mm",
           background: "#fff",
@@ -67,12 +97,12 @@ export default function BulletinPrint({
             justifyContent: "space-between",
             alignItems: "flex-start",
             paddingBottom: "2mm",
-            borderBottom: `1px solid ${BORDER}`,
+            borderBottom: `1px solid ${theme.border}`,
           }}
         >
           {/* Right block (RTL start) */}
           <div style={{ width: "55%" }}>
-            <div style={{ fontSize: "16px", fontWeight: "bold", color: TEAL_DARK }}>
+            <div style={{ fontSize: "16px", fontWeight: "bold", color: theme.dark }}>
               المندوبية الجهوية للتربية
             </div>
             <div style={{ marginTop: "2mm", fontSize: "11px" }}>
@@ -122,9 +152,9 @@ export default function BulletinPrint({
         <div style={{ display: "flex", justifyContent: "center", margin: "3mm 0 2mm 0" }}>
           <div
             style={{
-              background: TEAL_LIGHT,
-              border: `1.5px solid ${TEAL}`,
-              color: TEAL_DARK,
+              background: theme.light,
+              border: `1.5px solid ${theme.primary}`,
+              color: theme.dark,
               fontWeight: "bold",
               fontSize: "15px",
               padding: "1.5mm 12mm",
@@ -168,7 +198,7 @@ export default function BulletinPrint({
           {/* MAIN (right visually) */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3mm" }}>
             {b.domaines.map((d) => (
-              <DomaineBlock key={d.domaineId} domaine={d} />
+              <DomaineBlock key={d.domaineId} domaine={d} theme={theme} isPrive={isPrive} />
             ))}
             {b.modulesHorsDomaine.some((m) => (m.moyenneModule ?? 0) > 0) && (
               <DomaineBlock
@@ -180,6 +210,8 @@ export default function BulletinPrint({
                   moyenneDomaine: avg(b.modulesHorsDomaine.map((m) => m.moyenneModule)),
                   recommandation: null,
                 }}
+                theme={theme}
+                isPrive={isPrive}
               />
             )}
           </div>
@@ -190,18 +222,18 @@ export default function BulletinPrint({
                 apparaît à droite. Ordre conforme au modèle officiel :
                 معدل الثلاثي (droite) · أعلى · أدنى (gauche). */}
             <div style={{ display: "flex", gap: "1.5mm" }}>
-              <MiniStatCard label="معدل الثلاثي" value={formatNote(b.moyenneGenerale)} tone="primary" />
-              <MiniStatCard label="أعلى معدل بالقسم" value={formatNote(b.moyenneMax)} tone="good" />
-              <MiniStatCard label="أدنى معدل بالقسم" value={formatNote(b.moyenneMin)} tone="bad" />
+              <MiniStatCard label="معدل الثلاثي" value={formatNote(b.moyenneGenerale)} tone="primary" theme={theme} />
+              <MiniStatCard label="أعلى معدل بالقسم" value={formatNote(b.moyenneMax)} tone="good" theme={theme} />
+              <MiniStatCard label="أدنى معدل بالقسم" value={formatNote(b.moyenneMin)} tone="bad" theme={theme} />
             </div>
 
             {/* Observation comportement */}
-            <BadgePanel title="ملاحظات المدرس(ة) حول السلوك و المواطنة" minHeight="22mm">
+            <BadgePanel title="ملاحظات المدرس(ة) حول السلوك و المواطنة" minHeight="22mm" theme={theme}>
               <div style={{ fontSize: "10px", padding: "2mm" }}>{b.comportement || ""}</div>
             </BadgePanel>
 
             {/* Certificat */}
-            <BadgePanel title="الشهادة" minHeight="18mm">
+            <BadgePanel title="الشهادة" minHeight="18mm" theme={theme}>
               <div
                 style={{
                   textAlign: "center",
@@ -215,7 +247,7 @@ export default function BulletinPrint({
             </BadgePanel>
 
             {/* Director + stamp */}
-            <BadgePanel title="مدير(ة) المدرسة" minHeight="32mm">
+            <BadgePanel title="مدير(ة) المدرسة" minHeight="32mm" theme={theme}>
               <div
                 style={{
                   display: "flex",
@@ -258,7 +290,7 @@ export default function BulletinPrint({
             </BadgePanel>
 
             {/* Parent signature */}
-            <BadgePanel title="إمضاء الولي" minHeight="18mm">
+            <BadgePanel title="إمضاء الولي" minHeight="18mm" theme={theme}>
               <div />
             </BadgePanel>
           </div>
@@ -275,9 +307,11 @@ interface DomaineBlockProps {
     BulletinDomaineDTO,
     "domaineId" | "domaineName" | "domaineNameAr" | "modules" | "moyenneDomaine" | "recommandation"
   > & { coeff?: number };
+  theme: BulletinTheme;
+  isPrive: boolean;
 }
 
-function DomaineBlock({ domaine }: DomaineBlockProps) {
+function DomaineBlock({ domaine, theme, isPrive }: DomaineBlockProps) {
   const recommandation = domaine.recommandation || "";
   const modules = domaine.modules;
 
@@ -306,12 +340,22 @@ function DomaineBlock({ domaine }: DomaineBlockProps) {
   const totalRows =
     modules.length + (hasSousDomaines ? groups.filter((g) => g.key !== null).length : 0);
 
+  // Prive : header sombre + zebra. Etatique : header clair (existant).
+  const headerBg = isPrive ? theme.primary : theme.light;
+  const headerColor = isPrive ? "#fff" : theme.dark;
+  const thStyleLocal: React.CSSProperties = {
+    ...thStyle,
+    border: `1px solid ${isPrive ? theme.primary : theme.border}`,
+    background: headerBg,
+    color: headerColor,
+  };
+
   return (
-    <div style={{ borderRadius: "2mm", overflow: "hidden", border: `1px solid ${TEAL}` }}>
+    <div style={{ borderRadius: "2mm", overflow: "hidden", border: `1px solid ${theme.primary}` }}>
       {/* Domain header bar */}
       <div
         style={{
-          background: TEAL,
+          background: theme.primary,
           color: "white",
           textAlign: "center",
           fontWeight: "bold",
@@ -345,13 +389,13 @@ function DomaineBlock({ domaine }: DomaineBlockProps) {
           <col style={{ width: "11%" }} />
         </colgroup>
         <thead>
-          <tr style={{ background: TEAL_LIGHT, color: TEAL_DARK }}>
-            <th style={thStyle}>المادة</th>
-            <th style={thStyle}>العدد /20</th>
-            <th style={thStyle}>معدل المجال</th>
-            <th style={thStyle}>توصيات المدرس(ة)</th>
-            <th style={thStyle}>أدنى معدل في القسم</th>
-            <th style={thStyle}>أعلى معدل في القسم</th>
+          <tr>
+            <th style={thStyleLocal}>المادة</th>
+            <th style={thStyleLocal}>العدد /20</th>
+            <th style={thStyleLocal}>معدل المجال</th>
+            <th style={thStyleLocal}>توصيات المدرس(ة)</th>
+            <th style={thStyleLocal}>أدنى معدل في القسم</th>
+            <th style={thStyleLocal}>أعلى معدل في القسم</th>
           </tr>
         </thead>
         <tbody>
@@ -376,10 +420,10 @@ function DomaineBlock({ domaine }: DomaineBlockProps) {
                         style={{
                           ...tdStyle,
                           fontWeight: "bold",
-                          color: TEAL_DARK,
+                          color: theme.dark,
                           fontSize: "10.5px",
                           padding: "1mm 1.5mm",
-                          background: "#f4fafc",
+                          background: theme.subRowBg,
                         }}
                       >
                         • {g.nameAr || g.nameFr}
@@ -408,8 +452,8 @@ function DomaineBlock({ domaine }: DomaineBlockProps) {
                           </td>
                         </>
                       )}
-                      <td style={{ ...tdStyle, background: "#f4fafc" }} />
-                      <td style={{ ...tdStyle, background: "#f4fafc" }} />
+                      <td style={{ ...tdStyle, background: theme.subRowBg }} />
+                      <td style={{ ...tdStyle, background: theme.subRowBg }} />
                     </tr>
                   );
                   visualRowIdx++;
@@ -424,6 +468,9 @@ function DomaineBlock({ domaine }: DomaineBlockProps) {
                       rowSpan={totalRows}
                       moyenneDomaine={domaine.moyenneDomaine}
                       recommandation={recommandation}
+                      theme={theme}
+                      isPrive={isPrive}
+                      rowIndex={visualRowIdx}
                     />
                   );
                   visualRowIdx++;
@@ -444,23 +491,35 @@ function ModuleRow({
   rowSpan,
   moyenneDomaine,
   recommandation,
+  theme,
+  isPrive,
+  rowIndex,
 }: {
   mod: BulletinModuleDTO;
   isFirst: boolean;
   rowSpan: number;
   moyenneDomaine: number;
   recommandation: string;
+  theme: BulletinTheme;
+  isPrive: boolean;
+  rowIndex: number;
 }) {
   const note = mod.moyenneModule;
   const hasNote = note != null && note > 0;
+  const rowBg = isPrive && theme.zebra && rowIndex % 2 === 1 ? "#f8fafc" : "#fff";
+  const tdStyleLocal: React.CSSProperties = {
+    ...tdStyle,
+    border: `1px solid ${isPrive ? theme.border : theme.border}`,
+    background: rowBg,
+  };
   return (
     <tr>
-      <td style={{ ...tdStyle, fontWeight: 600, color: TEAL_DARK, fontSize: "10.5px" }}>
+      <td style={{ ...tdStyleLocal, fontWeight: 600, color: theme.dark, fontSize: "10.5px" }}>
         {mod.moduleNameAr || mod.moduleName}
       </td>
       <td
         style={{
-          ...tdStyle,
+          ...tdStyleLocal,
           textAlign: "center",
           fontWeight: "bold",
           color: hasNote ? (note >= 10 ? "#1b5e20" : "#b71c1c") : "#888",
@@ -472,7 +531,7 @@ function ModuleRow({
         <td
           rowSpan={rowSpan}
           style={{
-            ...tdStyle,
+            ...tdStyleLocal,
             textAlign: "center",
             fontWeight: "bold",
             fontSize: "13px",
@@ -488,7 +547,7 @@ function ModuleRow({
         <td
           rowSpan={rowSpan}
           style={{
-            ...tdStyle,
+            ...tdStyleLocal,
             fontSize: "10.5px",
             verticalAlign: "middle",
             lineHeight: 1.5,
@@ -497,8 +556,8 @@ function ModuleRow({
           {recommandation}
         </td>
       )}
-      <td style={{ ...tdStyle, textAlign: "center" }}>{formatNote(mod.moduleMin)}</td>
-      <td style={{ ...tdStyle, textAlign: "center" }}>{formatNote(mod.moduleMax)}</td>
+      <td style={{ ...tdStyleLocal, textAlign: "center" }}>{formatNote(mod.moduleMin)}</td>
+      <td style={{ ...tdStyleLocal, textAlign: "center" }}>{formatNote(mod.moduleMax)}</td>
     </tr>
   );
 }
@@ -509,19 +568,21 @@ function MiniStatCard({
   label,
   value,
   tone,
+  theme,
 }: {
   label: string;
   value: string;
   tone: "good" | "bad" | "primary";
+  theme: BulletinTheme;
 }) {
-  const valColor = tone === "good" ? "#1b5e20" : tone === "bad" ? "#b71c1c" : TEAL_DARK;
+  const valColor = tone === "good" ? "#1b5e20" : tone === "bad" ? "#b71c1c" : theme.dark;
   return (
     <div
       style={{
         flex: 1,
-        border: `1px solid ${TEAL}`,
+        border: `1px solid ${theme.primary}`,
         borderRadius: "1.5mm",
-        background: TEAL_LIGHT,
+        background: theme.light,
         textAlign: "center",
         overflow: "hidden",
         minHeight: "16mm",
@@ -532,7 +593,7 @@ function MiniStatCard({
       <div
         style={{
           fontSize: "8.5px",
-          color: TEAL_DARK,
+          color: theme.dark,
           padding: "0.8mm 0.5mm",
           fontWeight: 600,
           lineHeight: 1.2,
@@ -567,15 +628,17 @@ function BadgePanel({
   title,
   children,
   minHeight,
+  theme,
 }: {
   title: string;
   children: React.ReactNode;
   minHeight?: string;
+  theme: BulletinTheme;
 }) {
   return (
     <div
       style={{
-        border: `1px solid ${TEAL}`,
+        border: `1px solid ${theme.primary}`,
         borderRadius: "1.5mm",
         background: "#fff",
         position: "relative",
@@ -597,12 +660,12 @@ function BadgePanel({
       >
         <span
           style={{
-            background: TEAL_LIGHT,
-            border: `1px solid ${TEAL}`,
+            background: theme.light,
+            border: `1px solid ${theme.primary}`,
             borderRadius: "3mm",
             padding: "0.6mm 4mm",
             fontSize: "9px",
-            color: TEAL_DARK,
+            color: theme.dark,
             fontWeight: 600,
             whiteSpace: "nowrap",
           }}
@@ -637,7 +700,7 @@ function avg(values: number[]): number {
 }
 
 const thStyle: React.CSSProperties = {
-  border: `1px solid ${BORDER}`,
+  border: `1px solid ${THEME_ETATIQUE.border}`,
   padding: "1.2mm 1.5mm",
   fontSize: "9.5px",
   fontWeight: "bold",
@@ -646,7 +709,7 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  border: `1px solid ${BORDER}`,
+  border: `1px solid ${THEME_ETATIQUE.border}`,
   padding: "1.2mm 1.5mm",
   fontSize: "10.5px",
   verticalAlign: "middle",

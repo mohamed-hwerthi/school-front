@@ -43,6 +43,11 @@ const TRIMESTRES = [
   { value: 3, label: "Trimestre 3" },
 ];
 
+const VERSIONS = [
+  { value: "etatique", label: "Version Étatique" },
+  { value: "prive", label: "Version Privée" },
+];
+
 const CERT_TYPES = [
   { value: "all", label: "Tous les certificats" },
   { value: "شهادة شرف الدرجة الأولى", label: "شهادة شرف الدرجة الأولى (≥18)" },
@@ -101,12 +106,13 @@ export default function CertificatsTab() {
   const { niveaux } = useNiveaux();
   const { niveauId, classeId, trimestre, setNiveauId, setClasseId, setTrimestre } = useCarnetSelection();
   const [certFilter, setCertFilter] = useState("all");
+  const [version, setVersion] = useState("etatique");
   const [previewStudent, setPreviewStudent] = useState<BulletinDTO | null>(null);
   const [statsExpanded, setStatsExpanded] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
 
   const { data: classes = [] } = useClasses(niveauId || undefined);
-  const { data: bulletins = [], isLoading } = useBulletins(classeId, trimestre, "etatique");
+  const { data: bulletins = [], isLoading } = useBulletins(classeId, trimestre, version);
   const { data: settings } = useSchoolSettings();
 
   // Filter students who have a certificate
@@ -283,6 +289,20 @@ export default function CertificatsTab() {
               {CERT_TYPES.map((ct) => (
                 <SelectItem key={ct.value} value={ct.value}>
                   {ct.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={version} onValueChange={setVersion}>
+            <SelectTrigger className="w-[170px]">
+              <Award className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VERSIONS.map((v) => (
+                <SelectItem key={v.value} value={v.value}>
+                  {v.label}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -13,6 +13,8 @@ export interface DomaineDTO {
   name: string;
   nameAr: string | null;
   ordre: number;
+  ordreEtatique: number;
+  ordrePrive: number;
   coeffEtatique: number;
   coeffPrive: number;
   versionEtatique: boolean;
@@ -26,6 +28,8 @@ export interface DomaineRequest {
   name: string;
   nameAr?: string;
   ordre: number;
+  ordreEtatique: number;
+  ordrePrive: number;
   coeffEtatique: number;
   coeffPrive: number;
   versionEtatique: boolean;

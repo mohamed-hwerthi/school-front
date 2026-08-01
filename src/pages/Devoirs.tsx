@@ -75,6 +75,7 @@ import {
 } from "@/hooks/useDevoirs";
 import { useClasses } from "@/hooks/useClasses";
 import { useModules } from "@/hooks/useModules";
+import type { ModuleDTO } from "@/api/modules.api";
 import { useNiveaux } from "@/hooks/useNiveaux";
 import { FileUpload } from "@/components/FileUpload";
 import { resolveFileUrl, extractOriginalName, type FileInfo } from "@/api/storage.api";
@@ -139,9 +140,11 @@ export default function DevoirsPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("devoirs");
   const [search, setSearch] = useState("");
-  const [filterNiveauId, setFilterNiveauId] = useState<string>("all");
-  const [filterClasseId, setFilterClasseId] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Mandatory class selection (first screen)
+  const [requiredNiveauId, setRequiredNiveauId] = useState<string>("");
+  const [requiredClasseId, setRequiredClasseId] = useState<string>("");
 
   // Devoir form
   const [devoirFormOpen, setDevoirFormOpen] = useState(false);
@@ -218,35 +221,53 @@ export default function DevoirsPage() {
   const createRessource = useCreateRessource();
   const deleteRessource = useDeleteRessource();
 
-  // Build a quick lookup classeId -> fullName for the table column
-  const classeNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    allClasses.forEach((c) => map.set(c.id, c.fullName));
-    return map;
-  }, [allClasses]);
-
-  // Classes available in the filter dropdown (depends on selected niveau)
-  const filterClasses = useMemo(
-    () => (filterNiveauId === "all" ? allClasses : allClasses.filter((c) => String(c.niveauId) === filterNiveauId)),
-    [allClasses, filterNiveauId]
+  // Classes available for the mandatory selection (depends on required niveau)
+  const requiredClasses = useMemo(
+    () => allClasses.filter((c) => String(c.niveauId) === requiredNiveauId),
+    [allClasses, requiredNiveauId]
   );
+
+  const selectedClasse = useMemo(
+    () => allClasses.find((c) => c.id === requiredClasseId),
+    [allClasses, requiredClasseId]
+  );
+
+  // Devoirs of the selected class
+  const classeDevoirs = useMemo(
+    () => devoirs.filter((d) => String(d.classeId ?? "") === requiredClasseId),
+    [devoirs, requiredClasseId]
+  );
+
+  // Group devoirs by domaine -> module for the selected class
+  const groupedByDomaine = useMemo(() => {
+    const byModule = new Map<string, Devoir[]>();
+    classeDevoirs.forEach((d) => {
+      const key = d.moduleId ?? "sans-matiere";
+      if (!byModule.has(key)) byModule.set(key, []);
+      byModule.get(key)!.push(d);
+    });
+    const domaines = new Map<string, { id: string; name: string; modules: { module: ModuleDTO | null; devoirs: Devoir[] }[] }>();
+    for (const [moduleId, list] of byModule) {
+      const module = allModules.find((m) => m.id === moduleId) ?? null;
+      const domaineId = module?.domaineId ?? "autres";
+      const domaineName = module?.domaineName ?? "Autres matieres";
+      if (!domaines.has(domaineId)) domaines.set(domaineId, { id: domaineId, name: domaineName, modules: [] });
+      domaines.get(domaineId)!.modules.push({ module, devoirs: list });
+    }
+    return Array.from(domaines.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [classeDevoirs, allModules]);
 
   // Filtered devoirs
   const filteredDevoirs = useMemo(() => {
     const q = search.toLowerCase();
-    return devoirs.filter((d) => {
-      if (filterClasseId !== "all" && String(d.classeId ?? "") !== filterClasseId) return false;
-      if (filterNiveauId !== "all" && filterClasseId === "all") {
-        const niveauOfClasse = d.classeId ? allClasses.find((c) => c.id === d.classeId)?.niveauId : undefined;
-        if (String(niveauOfClasse ?? "") !== filterNiveauId) return false;
-      }
+    return classeDevoirs.filter((d) => {
       if (!q) return true;
       return (
         d.titre.toLowerCase().includes(q) ||
         d.type.toLowerCase().includes(q)
       );
     });
-  }, [devoirs, search, filterClasseId, filterNiveauId, allClasses]);
+  }, [classeDevoirs, search]);
 
   // Filtered soumissions
   const filteredSoumissions = useMemo(() => {
@@ -275,13 +296,12 @@ export default function DevoirsPage() {
     activeTab === "soumissions" ? filteredSoumissions :
     filteredRessources;
   const totalPages = Math.max(1, Math.ceil(activeList.length / ITEMS_PER_PAGE));
-  const paginatedDevoirs = filteredDevoirs.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
   const paginatedSoumissions = filteredSoumissions.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
   const paginatedRessources = filteredRessources.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const stats = [
-    { label: t("homework.totalHomework"), value: devoirs.length, icon: BookOpen, color: "bg-blue-50", textColor: "text-blue-700" },
-    { label: t("common.published"), value: devoirs.filter((d) => d.statut === "PUBLIE").length, icon: CheckCircle, color: "bg-emerald-50", textColor: "text-emerald-700" },
+    { label: t("homework.totalHomework"), value: classeDevoirs.length, icon: BookOpen, color: "bg-blue-50", textColor: "text-blue-700" },
+    { label: t("common.published"), value: classeDevoirs.filter((d) => d.statut === "PUBLIE").length, icon: CheckCircle, color: "bg-emerald-50", textColor: "text-emerald-700" },
     { label: t("homework.resources"), value: ressources.length, icon: FileText, color: "bg-purple-50", textColor: "text-purple-700" },
   ];
 
@@ -374,6 +394,58 @@ export default function DevoirsPage() {
     );
   }
 
+  // ─── First screen: mandatory Niveau → Classe selection ───
+  if (!requiredClasseId) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 space-y-6">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+          <h1 className="font-heading text-xl md:text-2xl font-bold text-foreground">{t("homework.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("homework.subtitle")}</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+          className="mx-auto max-w-xl rounded-2xl border border-border/50 bg-card p-6 shadow-sm"
+        >
+          <div className="mb-5 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <BookOpen className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="font-heading text-lg font-semibold text-foreground">Selectionnez la classe</h2>
+            <p className="text-sm text-muted-foreground mt-1">Choisissez un niveau puis une classe pour voir les devoirs.</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="reqNiveau">Niveau *</Label>
+              <Select value={requiredNiveauId} onValueChange={(v) => { setRequiredNiveauId(v); setRequiredClasseId(""); }}>
+                <SelectTrigger id="reqNiveau"><SelectValue placeholder="Selectionner un niveau" /></SelectTrigger>
+                <SelectContent>
+                  {niveaux.map((n) => (
+                    <SelectItem key={n.id} value={String(n.id)}>{n.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="reqClasse">Classe *</Label>
+              <Select value={requiredClasseId} onValueChange={setRequiredClasseId} disabled={!requiredNiveauId}>
+                <SelectTrigger id="reqClasse"><SelectValue placeholder={requiredNiveauId ? "Selectionner une classe" : "Choisissez un niveau d'abord"} /></SelectTrigger>
+                <SelectContent>
+                  {requiredClasses.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       {/* Header */}
@@ -383,6 +455,12 @@ export default function DevoirsPage() {
           <p className="text-sm text-muted-foreground mt-0.5">{t("homework.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
+          {selectedClasse && (
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setRequiredClasseId(""); setCurrentPage(0); }}>
+              <X className="h-4 w-4" />
+              {selectedClasse.fullName}
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setRessourceForm({ titre: "", type: "DOCUMENT" }); setRessourceNiveauId(undefined); setRessourceFormOpen(true); }}>
             <Upload className="h-4 w-4" />
             {t("homework.resources")}
@@ -422,32 +500,6 @@ export default function DevoirsPage() {
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }} placeholder="Rechercher..." className="ps-9" />
             </div>
-            {activeTab === "devoirs" && (
-              <>
-                <Select value={filterNiveauId} onValueChange={(v) => { setFilterNiveauId(v); setFilterClasseId("all"); setCurrentPage(0); }}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Niveau" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les niveaux</SelectItem>
-                    {niveaux.map((n) => (
-                      <SelectItem key={n.id} value={String(n.id)}>{n.nom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={filterClasseId} onValueChange={(v) => { setFilterClasseId(v); setCurrentPage(0); }} disabled={filterNiveauId === "all"}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder={filterNiveauId === "all" ? "Choisissez un niveau" : "Classe"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("common.allClasses")}</SelectItem>
-                    {filterClasses.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.fullName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
-            )}
             {activeTab === "soumissions" && (
               <Select value={selectedDevoirId ? String(selectedDevoirId) : "all"} onValueChange={(v) => setSelectedDevoirId(v === "all" ? undefined : Number(v))}>
                 <SelectTrigger className="w-[200px]">
@@ -461,8 +513,8 @@ export default function DevoirsPage() {
                 </SelectContent>
               </Select>
             )}
-            {(search || (activeTab === "devoirs" && (filterClasseId !== "all" || filterNiveauId !== "all"))) && (
-              <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setFilterNiveauId("all"); setFilterClasseId("all"); setCurrentPage(0); }} className="gap-1 text-muted-foreground hover:text-foreground">
+            {search && (
+              <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setCurrentPage(0); }} className="gap-1 text-muted-foreground hover:text-foreground">
                 <X className="h-3.5 w-3.5" />
                 {t("common.reset")}
               </Button>
@@ -470,124 +522,109 @@ export default function DevoirsPage() {
           </div>
         </motion.div>
 
-        {/* Devoirs Table */}
+        {/* Devoirs grouped by domaine -> module */}
         <TabsContent value="devoirs">
-          <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground">Titre</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden sm:table-cell">Type</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">Classe</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">Date limite</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">Points</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground">Statut</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden lg:table-cell">Fichier</th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground hidden lg:table-cell">Soumissions</th>
-                    <th className="py-3 px-4 text-end text-xs font-semibold text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedDevoirs.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-16 text-center text-muted-foreground">
-                        <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                        <p className="font-medium">{t("homework.noHomework")}</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedDevoirs.map((devoir) => (
-                      <tr key={devoir.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="py-3 px-4 font-medium text-foreground">{devoir.titre}</td>
-                        <td className="py-3 px-4 hidden sm:table-cell">
-                          <Badge variant="outline">{TYPE_LABELS[devoir.type]}</Badge>
-                        </td>
-                        <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
-                          {devoir.classeId ? (classeNameById.get(devoir.classeId) ?? `#${devoir.classeId}`) : "-"}
-                        </td>
-                        <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
-                          {new Date(devoir.dateLimite).toLocaleDateString("fr-FR")}
-                        </td>
-                        <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{devoir.pointsMax}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUT_COLORS[devoir.statut]}`}>
-                            {STATUT_LABELS[devoir.statut]}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 hidden lg:table-cell">
-                          {devoir.fichierUrl ? (
-                            <a
-                              href={resolveFileUrl(devoir.fichierUrl)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-primary hover:underline text-xs"
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                              Fichier
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">-</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">{devoir.totalSoumissions}</td>
-                        <td className="py-3 px-4 text-end">
-                          <div className="hidden sm:flex items-center justify-end gap-1">
-                            <PermissionGate perms={["MANAGE_DEVOIRS"]}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEditDevoir(devoir)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              {devoir.statut === "PUBLIE" && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600" onClick={() => closeDevoir.mutate(devoir.id)}>
-                                  <Lock className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(devoir)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </PermissionGate>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:hidden">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditDevoir(devoir)}>
-                                <Edit className="h-4 w-4 me-2" /> Modifier
-                              </DropdownMenuItem>
-                              {devoir.statut === "PUBLIE" && (
-                                <DropdownMenuItem onClick={() => closeDevoir.mutate(devoir.id)}>
-                                  <Lock className="h-4 w-4 me-2" /> Fermer
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={() => setDeleteTarget(devoir)} className="text-red-600">
-                                <Trash2 className="h-4 w-4 me-2" /> Supprimer
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+          {filteredDevoirs.length === 0 ? (
+            <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card shadow-sm py-16 text-center text-muted-foreground">
+              <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p className="font-medium">{t("homework.noHomework")}</p>
+            </motion.div>
+          ) : (
+            <div className="space-y-6">
+              {groupedByDomaine.map((domaine, di) => (
+                <motion.div key={domaine.id} custom={di} variants={fadeUp} initial="hidden" animate="visible" className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary uppercase tracking-wide">
+                      {domaine.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {domaine.modules.reduce((acc, m) => acc + m.devoirs.length, 0)} devoir(s)
+                    </span>
+                  </div>
+                  {domaine.modules.map(({ module, devoirs: moduleDevoirs }) => (
+                    <div key={module?.id ?? "sans-matiere"} className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-2.5">
+                        <p className="text-sm font-semibold text-foreground">{module?.name ?? "Sans matiere"}</p>
+                        <span className="text-xs text-muted-foreground">{moduleDevoirs.length} devoir(s)</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border">
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground">Titre</th>
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground hidden sm:table-cell">Type</th>
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">Date limite</th>
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground hidden md:table-cell">Points</th>
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground">Statut</th>
+                              <th className="py-2.5 px-4 text-start text-xs font-semibold text-muted-foreground hidden lg:table-cell">Soumissions</th>
+                              <th className="py-2.5 px-4 text-end text-xs font-semibold text-muted-foreground">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {moduleDevoirs.map((devoir) => (
+                              <tr key={devoir.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                                <td className="py-2.5 px-4 font-medium text-foreground">{devoir.titre}</td>
+                                <td className="py-2.5 px-4 hidden sm:table-cell">
+                                  <Badge variant="outline">{TYPE_LABELS[devoir.type]}</Badge>
+                                </td>
+                                <td className="py-2.5 px-4 hidden md:table-cell text-muted-foreground">
+                                  {new Date(devoir.dateLimite).toLocaleDateString("fr-FR")}
+                                </td>
+                                <td className="py-2.5 px-4 hidden md:table-cell text-muted-foreground">{devoir.pointsMax}</td>
+                                <td className="py-2.5 px-4">
+                                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUT_COLORS[devoir.statut]}`}>
+                                    {STATUT_LABELS[devoir.statut]}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-4 hidden lg:table-cell text-muted-foreground">{devoir.totalSoumissions}</td>
+                                <td className="py-2.5 px-4 text-end">
+                                  <div className="hidden sm:flex items-center justify-end gap-1">
+                                    <PermissionGate perms={["MANAGE_DEVOIRS"]}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => openEditDevoir(devoir)}>
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      {devoir.statut === "PUBLIE" && (
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600" onClick={() => closeDevoir.mutate(devoir.id)}>
+                                          <Lock className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTarget(devoir)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </PermissionGate>
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:hidden">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => openEditDevoir(devoir)}>
+                                        <Edit className="h-4 w-4 me-2" /> Modifier
+                                      </DropdownMenuItem>
+                                      {devoir.statut === "PUBLIE" && (
+                                        <DropdownMenuItem onClick={() => closeDevoir.mutate(devoir.id)}>
+                                          <Lock className="h-4 w-4 me-2" /> Fermer
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem onClick={() => setDeleteTarget(devoir)} className="text-red-600">
+                                        <Trash2 className="h-4 w-4 me-2" /> Supprimer
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              ))}
             </div>
-            {totalPages > 1 && activeTab === "devoirs" && (
-              <div className="flex items-center justify-between border-t border-border px-4 py-3">
-                <p className="text-xs text-muted-foreground">Page {currentPage + 1} sur {totalPages}</p>
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          )}
         </TabsContent>
 
         {/* Soumissions Table */}

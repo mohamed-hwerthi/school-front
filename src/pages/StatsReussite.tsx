@@ -170,7 +170,9 @@ function TrendBadge({ trend }: { trend: TrendInfo | null }) {
   );
 }
 
-export default function StatsReussite() {
+export default function StatsReussite({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { niveaux } = useNiveaux();
   const [selectedNiveau, setSelectedNiveau] = useState<number>(0);
   const { data: classes = [] } = useClasses(selectedNiveau || undefined);
@@ -288,7 +290,8 @@ export default function StatsReussite() {
   })();
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <div className={embedded ? "space-y-6" : "p-4 md:p-6 lg:p-8 space-y-6"}>
+      {!embedded && (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -303,6 +306,7 @@ export default function StatsReussite() {
           Analyse des performances par classe et par module
         </p>
       </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}

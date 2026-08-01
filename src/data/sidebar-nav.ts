@@ -43,6 +43,7 @@ import {
   Award,
   FileDown,
   Target,
+  MessageSquareText,
   Lock,
   LayoutGrid,
   PenLine,
@@ -138,10 +139,8 @@ export const sidebarSections: NavSection[] = [
     color: "text-indigo-500",
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
-      { title: "Bulletins individuels", titleKey: "nav.gradeBooks", icon: FileText, url: "/dashboard/bulletins-individuels" },
+      { title: "Appréciations", titleKey: "nav.appreciations", icon: MessageSquareText, url: "/dashboard/bulletins-individuels" },
       { title: "Impression masse", titleKey: "nav.bulkPrint", icon: Printer, url: "/dashboard/bulletins-masse" },
-      { title: "Stats réussite", titleKey: "nav.successStats", icon: TrendingUp, url: "/dashboard/stats-reussite" },
-      { title: "Comparatif", titleKey: "nav.comparative", icon: Activity, url: "/dashboard/comparatif" },
     ],
   },
   {
@@ -152,6 +151,8 @@ export const sidebarSections: NavSection[] = [
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
       { title: "Année scolaire", titleKey: "nav.schoolYear", icon: CalendarClock, url: "/dashboard/annee-scolaire" },
+      { title: "Stats réussite", titleKey: "nav.successStats", icon: TrendingUp, url: "/dashboard/stats-reussite" },
+      { title: "Comparatif", titleKey: "nav.comparative", icon: Activity, url: "/dashboard/comparatif" },
       { title: "Réinscriptions", titleKey: "nav.reEnrollment", icon: UserPlus, url: "/dashboard/reinscriptions" },
       { title: "Conseil de classe", titleKey: "nav.classCouncil", icon: GraduationCap, url: "/dashboard/conseil-classe" },
       { title: "Bulletins annuels", titleKey: "nav.annualBulletins", icon: FileText, url: "/dashboard/bulletins-annuels" },

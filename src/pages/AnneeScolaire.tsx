@@ -18,6 +18,8 @@ import {
   Star,
   ArrowRightLeft,
   Users,
+  BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -70,6 +72,8 @@ import { useNiveaux } from "@/hooks/useNiveaux";
 import { DataTable } from "@/components/DataTable";
 import type { AnneeScolaire, Trimestre, Vacance, JourFerie } from "@/types/annee-scolaire";
 import type { Passage, DECISIONS } from "@/types/passage";
+import StatsReussite from "./StatsReussite";
+import ComparatifPerformances from "./ComparatifPerformances";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -475,6 +479,14 @@ export default function AnneeScolairePage() {
                   <ArrowRightLeft className="h-3.5 w-3.5" />
                   Passages
                 </TabsTrigger>
+                <TabsTrigger value="stats-reussite" className="gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  Stats réussite
+                </TabsTrigger>
+                <TabsTrigger value="comparatif" className="gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Comparatif
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -688,6 +700,16 @@ export default function AnneeScolairePage() {
                   onPageChange: setPassagePage,
                 }}
               />
+            </TabsContent>
+
+            {/* Stats Réussite */}
+            <TabsContent value="stats-reussite" className="space-y-3">
+              <StatsReussite embedded />
+            </TabsContent>
+
+            {/* Comparatif */}
+            <TabsContent value="comparatif" className="space-y-3">
+              <ComparatifPerformances embedded />
             </TabsContent>
           </motion.div>
         </Tabs>

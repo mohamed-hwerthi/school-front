@@ -88,7 +88,9 @@ function ChartTooltip({
   );
 }
 
-export default function ComparatifPerformances() {
+export default function ComparatifPerformances({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { niveaux } = useNiveaux();
   const [selectedNiveau, setSelectedNiveau] = useState<number>(0);
   const { data: classes = [] } = useClasses(selectedNiveau || undefined);
@@ -304,7 +306,8 @@ export default function ComparatifPerformances() {
   }, [first, last, deltaMoyenne, deltaTaux, moduleEvolution, studentMovers]);
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <div className={embedded ? "space-y-6" : "p-4 md:p-6 lg:p-8 space-y-6"}>
+      {!embedded && (
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -319,6 +322,7 @@ export default function ComparatifPerformances() {
           Comparez les performances entre classes et suivez l'evolution
         </p>
       </motion.div>
+      )}
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>

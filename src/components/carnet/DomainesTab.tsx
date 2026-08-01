@@ -72,6 +72,8 @@ export default function DomainesTab() {
     name: "",
     nameAr: "",
     ordre: 1,
+    ordreEtatique: 1,
+    ordrePrive: 1,
     coeffEtatique: 1,
     coeffPrive: 1,
     versionEtatique: true,
@@ -115,6 +117,8 @@ export default function DomainesTab() {
       name: "",
       nameAr: "",
       ordre: domaines.length + 1,
+      ordreEtatique: domaines.length + 1,
+      ordrePrive: domaines.length + 1,
       coeffEtatique: 1,
       coeffPrive: 1,
       versionEtatique: true,
@@ -130,6 +134,8 @@ export default function DomainesTab() {
       name: d.name,
       nameAr: d.nameAr || "",
       ordre: d.ordre,
+      ordreEtatique: d.ordreEtatique,
+      ordrePrive: d.ordrePrive,
       coeffEtatique: d.coeffEtatique,
       coeffPrive: d.coeffPrive,
       versionEtatique: d.versionEtatique,
@@ -327,18 +333,18 @@ export default function DomainesTab() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {d.nameAr && <span className="font-arabic">{d.nameAr} · </span>}
-                      Ordre: {d.ordre} · {d.sousDomaines.length} sous-domaine
+                      {d.sousDomaines.length} sous-domaine
                       {d.sousDomaines.length !== 1 ? "s" : ""}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       {d.versionEtatique && (
                         <span className="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                          Étatique · coeff {d.coeffEtatique}
+                          Étatique · ordre {d.ordreEtatique} · coeff {d.coeffEtatique}
                         </span>
                       )}
                       {d.versionPrivee && (
                         <span className="inline-flex items-center rounded-md bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
-                          Privé · coeff {d.coeffPrive}
+                          Privé · ordre {d.ordrePrive} · coeff {d.coeffPrive}
                         </span>
                       )}
                     </div>
@@ -467,16 +473,35 @@ export default function DomainesTab() {
                 dir="rtl"
               />
             </div>
-            <div>
-              <Label>Ordre d'affichage</Label>
-              <Input
-                type="number"
-                min={1}
-                value={domForm.ordre}
-                onChange={(e) =>
-                  setDomForm({ ...domForm, ordre: Number(e.target.value) })
-                }
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Ordre étatique</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={domForm.ordreEtatique}
+                  onChange={(e) =>
+                    setDomForm({
+                      ...domForm,
+                      ordreEtatique: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label>Ordre privé</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={domForm.ordrePrive}
+                  onChange={(e) =>
+                    setDomForm({
+                      ...domForm,
+                      ordrePrive: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

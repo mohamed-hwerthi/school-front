@@ -301,6 +301,53 @@ export default function AppreciationsTab() {
         </div>
       </motion.div>
 
+      {/* Default state — choose a niveau/classe */}
+      {!ready && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.05 }}
+          className="rounded-xl border border-border/50 bg-card shadow-sm"
+        >
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="relative mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 text-white shadow">
+                <GraduationCap className="h-4 w-4" />
+              </span>
+            </div>
+            <h3 className="font-heading text-lg font-bold text-foreground">
+              Choisissez une classe
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mt-1.5">
+              Sélectionnez un niveau puis une classe dans les filtres ci-dessus pour
+              afficher et saisir les appréciations, recommandations et certificats.
+            </p>
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-lg">
+              {[
+                { label: "Niveau", desc: "1ère, 2ème, 3ème...", icon: GraduationCap },
+                { label: "Classe", desc: "1A, 1B, 2A...", icon: Users },
+                { label: "Trimestre", desc: "1, 2 ou 3", icon: Save },
+              ].map((s, i) => (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 + i * 0.08 }}
+                  className="rounded-xl border border-border/40 bg-muted/30 p-4 text-center"
+                >
+                  <s.icon className="h-5 w-5 mx-auto mb-2 text-indigo-500" />
+                  <p className="text-sm font-semibold text-foreground">{s.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Mode switch */}
       {ready && (
         <motion.div

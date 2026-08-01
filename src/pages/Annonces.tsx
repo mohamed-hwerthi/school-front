@@ -52,6 +52,7 @@ import {
   useDeleteAnnonce,
 } from "@/hooks/useAnnonces";
 import { integrationsApi } from "@/api/integrations.api";
+import { useMySmsCredits } from "@/hooks/useSmsCredits";
 import type { Annonce, AnnonceType, DestinatairesType } from "@/types/notification";
 import { notify } from "@/lib/toast";
 
@@ -108,6 +109,7 @@ export default function AnnoncesPage() {
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
   const { data: annonces = [], isLoading } = useAnnonces();
+  const { data: smsCredits } = useMySmsCredits();
   const createAnnonce = useCreateAnnonce();
   const updateAnnonce = useUpdateAnnonce();
   const deleteAnnonce = useDeleteAnnonce();
@@ -192,6 +194,11 @@ export default function AnnoncesPage() {
       return;
     }
 
+    if (smsCredits && phones.length > smsCredits.remaining) {
+      notify.error(`Credits SMS insuffisants. Disponible: ${smsCredits.remaining}, Requis: ${phones.length}`);
+      return;
+    }
+
     setSmsSending(true);
     try {
       const result = await integrationsApi.sendBulkSms(phones, smsMessage);
@@ -225,6 +232,18 @@ export default function AnnoncesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {smsCredits && (
+            <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
+              smsCredits.remaining <= 0
+                ? "bg-red-50 text-red-700"
+                : smsCredits.remaining < 20
+                ? "bg-amber-50 text-amber-700"
+                : "bg-emerald-50 text-emerald-700"
+            }`}>
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>{smsCredits.remaining}/{smsCredits.totalCredits} SMS</span>
+            </div>
+          )}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Type" />
@@ -350,6 +369,16 @@ export default function AnnoncesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {smsCredits && (
+              <div className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs ${
+                smsCredits.remaining <= 0
+                  ? "bg-red-50 text-red-700"
+                  : "bg-muted"
+              }`}>
+                <span>Credits SMS disponibles</span>
+                <span className="font-bold">{smsCredits.remaining}/{smsCredits.totalCredits}</span>
+              </div>
+            )}
             <div>
               <Label htmlFor="smsPhones">{t("announcements.phoneNumbers")}</Label>
               <Textarea

@@ -9,12 +9,15 @@ import {
   Power,
   PowerOff,
   ArrowUpDown,
-  Eye,
   Plus,
+  MessageSquare,
+  Edit,
 } from "lucide-react";
 import { notify } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -40,6 +43,7 @@ import {
   useDeactivateTenant,
   useChangePlan,
 } from "@/hooks/useSaas";
+import { useSetSmsCredits } from "@/hooks/useSmsCredits";
 import type { TenantResponse } from "@/types/saas";
 import { useLanguage } from "@/hooks/useLanguage";
 import { CURRENCY } from "@/config/currency";
@@ -71,6 +75,9 @@ export default function SuperAdminDashboard() {
 
   const [planDialog, setPlanDialog] = useState<TenantResponse | null>(null);
   const [selectedPlan, setSelectedPlan] = useState("");
+  const [smsDialog, setSmsDialog] = useState<TenantResponse | null>(null);
+  const [smsCreditsValue, setSmsCreditsValue] = useState("");
+  const setSmsCredits = useSetSmsCredits();
 
   const handleToggleActive = (tenant: TenantResponse) => {
     if (tenant.active) {
@@ -214,6 +221,7 @@ export default function SuperAdminDashboard() {
                 <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Forfait</th>
                 <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Statut</th>
                 <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Tarif</th>
+                <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Credits SMS</th>
                 <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Limites</th>
                 <th className="py-3 px-3 text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
@@ -244,6 +252,48 @@ export default function SuperAdminDashboard() {
                   </td>
                   <td className="py-3 px-3 font-medium">
                     {(tenant.monthlyRate ?? 0).toFixed(2)} {CURRENCY}/mois
+                  </td>
+                  <td className="py-3 px-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-[80px]">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-medium">{tenant.smsCreditsUsed ?? 0}/{tenant.smsCredits ?? 0}</span>
+                          <span className="text-muted-foreground">
+                            {((tenant.smsCredits ?? 0) > 0
+                              ? Math.round(((tenant.smsCreditsUsed ?? 0) / (tenant.smsCredits ?? 0)) * 100)
+                              : 0)}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              (tenant.smsCredits ?? 0) > 0 && ((tenant.smsCreditsUsed ?? 0) / (tenant.smsCredits ?? 0)) > 0.8
+                                ? "bg-red-500"
+                                : (tenant.smsCredits ?? 0) > 0 && ((tenant.smsCreditsUsed ?? 0) / (tenant.smsCredits ?? 0)) > 0.5
+                                ? "bg-amber-500"
+                                : "bg-emerald-500"
+                            }`}
+                            style={{
+                              width: `${(tenant.smsCredits ?? 0) > 0
+                                ? Math.min(100, ((tenant.smsCreditsUsed ?? 0) / (tenant.smsCredits ?? 0)) * 100)
+                                : 0}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        title="Gerer les credits SMS"
+                        onClick={() => {
+                          setSmsDialog(tenant);
+                          setSmsCreditsValue(String(tenant.smsCredits ?? 0));
+                        }}
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                   <td className="py-3 px-3 text-xs text-muted-foreground">
                     <div>{tenant.maxStudents ?? 50} eleves</div>
@@ -282,7 +332,7 @@ export default function SuperAdminDashboard() {
               ))}
               {(!tenants || tenants.length === 0) && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-10 text-center text-muted-foreground">
                     <Building2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     <p className="mb-3">Aucune ecole enregistree</p>
                     <Button asChild size="sm" className="gap-1.5 bg-gradient-to-r from-violet-500 to-purple-600">
@@ -326,6 +376,62 @@ export default function SuperAdminDashboard() {
             </DialogClose>
             <Button onClick={handleChangePlan} disabled={changePlan.isPending}>
               {changePlan.isPending ? t("common.updating") : t("common.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* SMS Credits Dialog */}
+      <Dialog open={!!smsDialog} onOpenChange={(open) => !open && setSmsDialog(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Credits SMS
+            </DialogTitle>
+            <DialogDescription>
+              {smsDialog?.name} — Utilise: {smsDialog?.smsCreditsUsed ?? 0} / {smsDialog?.smsCredits ?? 0}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 space-y-4">
+            <div>
+              <Label htmlFor="smsCredits">Nombre total de credits SMS</Label>
+              <Input
+                id="smsCredits"
+                type="number"
+                min="0"
+                value={smsCreditsValue}
+                onChange={(e) => setSmsCreditsValue(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-4">
+            <DialogClose asChild>
+              <Button variant="outline">{t("common.cancel")}</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                if (!smsDialog) return;
+                const val = parseInt(smsCreditsValue, 10);
+                if (isNaN(val) || val < 0) {
+                  notify.error("Veuillez entrer un nombre valide");
+                  return;
+                }
+                setSmsCredits.mutate(
+                  { tenantId: smsDialog.schemaName, totalCredits: val },
+                  {
+                    onSuccess: () => {
+                      notify.success(`Credits SMS mis a jour pour ${smsDialog.name}`);
+                      setSmsDialog(null);
+                    },
+                    onError: () => notify.error("Erreur lors de la mise a jour"),
+                  }
+                );
+              }}
+              disabled={setSmsCredits.isPending}
+            >
+              {setSmsCredits.isPending ? t("common.updating") : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -69,14 +69,16 @@ function fmt(n: number | null | undefined): string {
   return n == null ? "—" : n.toFixed(2);
 }
 
-export default function BilanAnnuel() {
+export default function BilanAnnuel({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { data: bilan, isLoading, isError } = useBilanAnnuel();
 
   // Palmarès tab
   const { niveaux } = useNiveaux();
-  const [selectedNiveau, setSelectedNiveau] = useState(0);
+  const [selectedNiveau, setSelectedNiveau] = useState("");
   const { data: classes = [] } = useClasses(selectedNiveau || undefined);
-  const [selectedClasse, setSelectedClasse] = useState(0);
+  const [selectedClasse, setSelectedClasse] = useState("");
   const { data: conseil, isLoading: conseilLoading } = useConseilClasse(selectedClasse);
   const { data: comparatif = [] } = useBilanComparatif();
   const { data: matieres = [] } = useStatsMatieres(selectedClasse);
@@ -319,7 +321,7 @@ export default function BilanAnnuel() {
                     value={selectedNiveau ? String(selectedNiveau) : ""}
                     onValueChange={(v) => {
                       setSelectedNiveau(v);
-                      setSelectedClasse(0);
+                      setSelectedClasse("");
                     }}
                   >
                     <SelectTrigger>
@@ -356,13 +358,13 @@ export default function BilanAnnuel() {
               </CardContent>
             </Card>
 
-            {selectedClasse > 0 && conseilLoading && (
+            {selectedClasse !== "" && conseilLoading && (
               <div className="flex items-center justify-center py-16 text-slate-400">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             )}
 
-            {selectedClasse > 0 && !conseilLoading && conseil && ranked.length === 0 && (
+            {selectedClasse !== "" && !conseilLoading && conseil && ranked.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center text-slate-500">
                   <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-amber-400" />
@@ -371,7 +373,7 @@ export default function BilanAnnuel() {
               </Card>
             )}
 
-            {selectedClasse > 0 && !conseilLoading && conseil && ranked.length > 0 && (
+            {selectedClasse !== "" && !conseilLoading && conseil && ranked.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -423,7 +425,7 @@ export default function BilanAnnuel() {
               </Card>
             )}
 
-            {selectedClasse === 0 && (
+            {selectedClasse === "" && (
               <Card>
                 <CardContent className="flex flex-col items-center gap-2 py-12 text-slate-400">
                   <GraduationCap className="h-8 w-8" />
@@ -477,7 +479,7 @@ export default function BilanAnnuel() {
                     value={selectedNiveau ? String(selectedNiveau) : ""}
                     onValueChange={(v) => {
                       setSelectedNiveau(v);
-                      setSelectedClasse(0);
+                      setSelectedClasse("");
                     }}
                   >
                     <SelectTrigger>
@@ -514,7 +516,7 @@ export default function BilanAnnuel() {
               </CardContent>
             </Card>
 
-            {selectedClasse > 0 && matieres.length > 0 && (
+            {selectedClasse !== "" && matieres.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Taux de réussite par matière</CardTitle>
@@ -553,14 +555,14 @@ export default function BilanAnnuel() {
                 </CardContent>
               </Card>
             )}
-            {selectedClasse > 0 && matieres.length === 0 && (
+            {selectedClasse !== "" && matieres.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center text-slate-500">
                   Aucune note saisie pour cette classe.
                 </CardContent>
               </Card>
             )}
-            {selectedClasse === 0 && (
+            {selectedClasse === "" && (
               <Card>
                 <CardContent className="py-12 text-center text-slate-400">
                   Sélectionnez une classe pour voir les taux par matière.

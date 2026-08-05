@@ -63,8 +63,8 @@ function fmt(n: number | null): string {
 
 export default function ConseilClasse() {
   const { niveaux, isLoading: niveauxLoading } = useNiveaux();
-  const [selectedNiveau, setSelectedNiveau] = useState(0);
-  const [selectedClasse, setSelectedClasse] = useState(0);
+  const [selectedNiveau, setSelectedNiveau] = useState("");
+  const [selectedClasse, setSelectedClasse] = useState("");
   const { data: classes = [] } = useClasses(selectedNiveau || undefined);
 
   const { data: conseil, isLoading: conseilLoading } = useConseilClasse(selectedClasse);
@@ -228,7 +228,7 @@ export default function ConseilClasse() {
                 value={selectedNiveau ? String(selectedNiveau) : ""}
                 onValueChange={(v) => {
                   setSelectedNiveau(v);
-                  setSelectedClasse(0);
+                  setSelectedClasse("");
                 }}
               >
                 <SelectTrigger>
@@ -268,14 +268,14 @@ export default function ConseilClasse() {
         </Card>
 
         {/* Loading */}
-        {selectedClasse > 0 && conseilLoading && (
+        {selectedClasse !== "" && conseilLoading && (
           <div className="flex items-center justify-center py-16 text-slate-400">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         )}
 
         {/* Empty */}
-        {selectedClasse > 0 && !conseilLoading && conseil && propositions.length === 0 && (
+        {selectedClasse !== "" && !conseilLoading && conseil && propositions.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-slate-500">
               <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-amber-400" />
@@ -285,7 +285,7 @@ export default function ConseilClasse() {
         )}
 
         {/* Conseil */}
-        {selectedClasse > 0 && !conseilLoading && conseil && propositions.length > 0 && (
+        {selectedClasse !== "" && !conseilLoading && conseil && propositions.length > 0 && (
           <>
             {/* Context bar */}
             <div className="mb-4 flex flex-wrap items-center gap-3 text-sm">

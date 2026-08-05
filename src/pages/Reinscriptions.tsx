@@ -29,7 +29,9 @@ import { useReinscrire, useSuiviReinscription } from "@/hooks/useScolarite";
 import { notify } from "@/lib/toast";
 import type { ReinscriptionResult, AttestationReussite } from "@/types/scolarite";
 
-export default function Reinscriptions() {
+export default function Reinscriptions({
+  embedded = false,
+}: { embedded?: boolean } = {}) {
   const { data: annees = [] } = useAllAnneesScolaires();
   const reinscrire = useReinscrire();
 
@@ -95,9 +97,10 @@ export default function Reinscriptions() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className={embedded ? "space-y-6" : "min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6"}>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         {/* Header */}
+        {!embedded && (
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100">
             <UserPlus className="h-6 w-6 text-emerald-600" />
@@ -109,6 +112,7 @@ export default function Reinscriptions() {
             </p>
           </div>
         </div>
+        )}
 
         {/* ── Réinscription en masse (ANN-050) ── */}
         <Card className="mb-6">

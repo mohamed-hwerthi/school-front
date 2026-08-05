@@ -20,6 +20,7 @@ import {
   Users,
   BarChart3,
   TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -74,6 +75,7 @@ import type { AnneeScolaire, Trimestre, Vacance, JourFerie } from "@/types/annee
 import type { Passage, DECISIONS } from "@/types/passage";
 import StatsReussite from "./StatsReussite";
 import ComparatifPerformances from "./ComparatifPerformances";
+import Reinscriptions from "./Reinscriptions";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -487,6 +489,10 @@ export default function AnneeScolairePage() {
                   <TrendingUp className="h-3.5 w-3.5" />
                   Comparatif
                 </TabsTrigger>
+                <TabsTrigger value="reinscription" className="gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Réinscription
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -710,6 +716,11 @@ export default function AnneeScolairePage() {
             {/* Comparatif */}
             <TabsContent value="comparatif" className="space-y-3">
               <ComparatifPerformances embedded />
+            </TabsContent>
+
+            {/* Réinscription */}
+            <TabsContent value="reinscription" className="space-y-3">
+              <Reinscriptions embedded />
             </TabsContent>
           </motion.div>
         </Tabs>

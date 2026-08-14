@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingDown,
-  Search,
   Plus,
   Eye,
   Edit,
@@ -26,6 +25,7 @@ import {
 } from "recharts";
 import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -95,6 +95,7 @@ const MODES = ["ESPECES", "VIREMENT", "CHEQUE", "CARTE_BANCAIRE", "PRELEVEMENT"]
 
 export default function Depenses() {
   const [search, setSearch] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [filterCategorie, setFilterCategorie] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -151,6 +152,7 @@ export default function Depenses() {
 
   const resetFilters = () => {
     setSearch("");
+    setSearchText("");
     setFilterCategorie("all");
     setCurrentPage(0);
   };
@@ -389,15 +391,13 @@ export default function Depenses() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+        <SearchInput
             placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
-            className="ps-9"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={() => { setSearch(searchText.trim()); setCurrentPage(0); }}
+            className="flex-1 min-w-[200px] max-w-sm"
           />
-        </div>
         <Select value={filterCategorie} onValueChange={(v) => { setFilterCategorie(v); setCurrentPage(0); }}>
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Categorie" /></SelectTrigger>
           <SelectContent>

@@ -23,6 +23,8 @@ import {
 import { notify } from "@/lib/toast";
 
 interface CellState {
+  moduleId: string;
+  classeId: string;
   value: string;
   dirty: boolean;
 }
@@ -31,7 +33,7 @@ export default function VolumeHoraire() {
   const { niveaux, isLoading: loadingNiveaux } = useNiveaux();
   const { data: anneeActive } = useActiveAnneeScolaire();
 
-  const [selectedNiveauId, setSelectedNiveauId] = useState<number>(0);
+  const [selectedNiveauId, setSelectedNiveauId] = useState<string>("");
   const anneeScolaireId = anneeActive?.id;
 
   const { data: classes = [] } = useClasses(selectedNiveauId || undefined);
@@ -73,7 +75,7 @@ export default function VolumeHoraire() {
     if (raw !== "" && !/^\d{1,2}$/.test(raw)) return; // numeric only, max 2 digits
     setEdits((prev) => ({
       ...prev,
-      [cellKey(moduleId, classeId)]: { value: raw, dirty: true },
+      [cellKey(moduleId, classeId)]: { moduleId, classeId, value: raw, dirty: true },
     }));
   };
 
@@ -87,9 +89,6 @@ export default function VolumeHoraire() {
     const ops: Promise<unknown>[] = [];
     for (const [key, edit] of Object.entries(edits)) {
       if (!edit.dirty) continue;
-      const [modIdStr, classIdStr] = key.split("-");
-      const moduleId = Number(modIdStr);
-      const classeId = Number(classIdStr);
       const existing = volumeMap.get(key);
       const numeric = edit.value.trim() === "" ? null : Number(edit.value);
 
@@ -102,8 +101,8 @@ export default function VolumeHoraire() {
             updateMut.mutateAsync({
               id: existing.id,
               data: {
-                moduleId,
-                classeId,
+                moduleId: edit.moduleId,
+                classeId: edit.classeId,
                 anneeScolaireId,
                 nbHeuresHebdo: numeric,
               },
@@ -113,8 +112,8 @@ export default function VolumeHoraire() {
       } else {
         ops.push(
           createMut.mutateAsync({
-            moduleId,
-            classeId,
+            moduleId: edit.moduleId,
+            classeId: edit.classeId,
             anneeScolaireId,
             nbHeuresHebdo: numeric,
           })
@@ -135,7 +134,7 @@ export default function VolumeHoraire() {
 
   // Total heures par classe (existing values + edits)
   const totalsByClasse = useMemo(() => {
-    const totals = new Map<number, number>();
+    const totals = new Map<string, number>();
     for (const c of classes) {
       let sum = 0;
       for (const m of modules) {
@@ -187,7 +186,7 @@ export default function VolumeHoraire() {
       <div className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <Select
-            value={selectedNiveauId ? String(selectedNiveauId) : ""}
+            value={selectedNiveauId}
             onValueChange={(v) => {
               setSelectedNiveauId(v);
               setEdits({});

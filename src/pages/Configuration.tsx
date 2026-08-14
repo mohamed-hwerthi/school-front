@@ -5,7 +5,6 @@ import {
   School,
   GraduationCap,
   Clock,
-  Palette,
   Save,
   RotateCcw,
   ChevronRight,
@@ -42,7 +41,7 @@ const fadeUp = {
   }),
 };
 
-type ConfigSection = "general" | "horaires" | "niveaux" | "apparence";
+type ConfigSection = "general" | "horaires" | "niveaux";
 
 export default function Configuration() {
   const { t } = useLanguage();
@@ -51,7 +50,6 @@ export default function Configuration() {
     { key: "general", label: t("nav.home"), icon: School, description: t("configuration.title") },
     { key: "horaires", label: t("configuration.schedule"), icon: Clock, description: t("configuration.schedule") },
     { key: "niveaux", label: t("nav.levelsClasses"), icon: GraduationCap, description: t("configuration.levelManagement") },
-    { key: "apparence", label: t("configuration.theme"), icon: Palette, description: t("configuration.theme") },
   ], [t]);
   const loading = useSimulatedLoading(800);
   const { niveaux } = useNiveaux();
@@ -94,10 +92,6 @@ export default function Configuration() {
   const [heureFin, setHeureFin] = useState("17:00");
   const [dureeSeance, setDureeSeance] = useState("60");
   const [dureeRecreation, setDureeRecreation] = useState("15");
-
-  // Appearance
-  const [theme, setTheme] = useState("light");
-  const [couleurPrimaire, setCouleurPrimaire] = useState("#7c3aed");
 
   const handleSave = () => {
     updateSettings.mutate(
@@ -320,45 +314,6 @@ export default function Configuration() {
                 <Settings className="h-4 w-4" />
                 {t("configuration.levelManagement")}
               </Button>
-            </div>
-          )}
-
-          {/* APPARENCE */}
-          {activeSection === "apparence" && (
-            <div className="rounded-xl border border-border/50 bg-card p-6 shadow-sm space-y-6">
-              <div>
-                <h2 className="font-heading text-lg font-semibold flex items-center gap-2"><Palette className="h-5 w-5 text-primary" />{t("configuration.theme")}</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">{t("configuration.theme")}</p>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Thème</label>
-                  <div className="flex gap-3">
-                    {[
-                      { value: "light", label: t("configuration.themes.light"), bg: "bg-white border-2" },
-                      { value: "dark", label: t("configuration.themes.dark"), bg: "bg-gray-900 border-2" },
-                      { value: "auto", label: t("configuration.themes.auto"), bg: "bg-gradient-to-r from-white to-gray-900 border-2" },
-                    ].map((t) => (
-                      <button
-                        key={t.value}
-                        onClick={() => setTheme(t.value)}
-                        className={`flex flex-col items-center gap-2 rounded-lg p-3 transition-all ${theme === t.value ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
-                      >
-                        <div className={`h-12 w-16 rounded-md ${t.bg} ${theme === t.value ? "border-primary" : "border-border"}`} />
-                        <span className="text-xs font-medium">{t.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t("configuration.primaryColor")}</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={couleurPrimaire} onChange={(e) => setCouleurPrimaire(e.target.value)} className="h-10 w-10 rounded-lg cursor-pointer" />
-                    <Input value={couleurPrimaire} onChange={(e) => setCouleurPrimaire(e.target.value)} className="w-32" />
-                    <div className="h-10 w-10 rounded-lg" style={{ backgroundColor: couleurPrimaire }} />
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useVitrine } from "@/hooks/useVitrine";
 import { getSubdomainSlug } from "@/lib/vitrine-routing";
 import VitrineNavbar from "@/components/vitrine/VitrineNavbar";
@@ -10,6 +11,7 @@ import VitrineSEO from "@/components/vitrine/VitrineSEO";
 import VitrinePreviewBanner from "@/components/vitrine/VitrinePreviewBanner";
 import VitrineSkeleton from "@/components/vitrine/VitrineSkeleton";
 import { useLanguage } from "@/hooks/useLanguage";
+import type { VitrineConfig } from "@/types/vitrine";
 
 /**
  * Public vitrine page — renders the school's showcase website.
@@ -21,10 +23,24 @@ export default function VitrineSite() {
   const subdomainSlug = getSubdomainSlug();
   const slug = subdomainSlug ?? params.slug;
   const pageSlug = params.pageSlug;
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isPreview = searchParams.get("preview") === "true";
-  const { data, isLoading, isError } = useVitrine(slug, isPreview);
+  const hasPreviewParam = searchParams.get("preview") === "true";
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const { data, isLoading, isError } = useVitrine(slug, hasPreviewParam);
+
+  // A published site must never show the preview banner: drop the ?preview
+  // param from the URL (without reloading) so the address bar stays clean.
+  useEffect(() => {
+    if (hasPreviewParam && data?.config?.published) {
+      setBannerDismissed(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("preview");
+      setSearchParams(next, { replace: true });
+    }
+  }, [hasPreviewParam, data?.config?.published, searchParams, setSearchParams]);
+
+  const isPreview = hasPreviewParam && !data?.config?.published && !bannerDismissed;
 
   if (isLoading) {
     return <VitrineSkeleton />;
@@ -45,10 +61,11 @@ export default function VitrineSite() {
     );
   }
 
-  const config = data?.config ?? ({} as any);
+  const config = data?.config ?? ({} as VitrineConfig);
   const pages = data?.pages ?? [];
   const announcements = data?.announcements ?? [];
   const gallery = data?.gallery ?? [];
+  const documents = data?.documents ?? [];
 
   // Find active page — default to first page if no pageSlug
   const activePage = pageSlug
@@ -77,7 +94,7 @@ export default function VitrineSite() {
       <VitrineSEO config={config} pageTitle={activePage.title} slug={slug!} />
 
       {/* Preview mode banner */}
-      {isPreview && <VitrinePreviewBanner />}
+      {isPreview && <VitrinePreviewBanner onDismiss={() => setBannerDismissed(true)} />}
 
       <VitrineNavbar config={config} pages={pages} isPreview={isPreview} />
 
@@ -87,6 +104,7 @@ export default function VitrineSite() {
             config={config}
             announcements={announcements}
             gallery={gallery}
+            documents={documents}
             slug={slug ?? ""}
           />
         ) : (

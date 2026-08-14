@@ -1,4 +1,5 @@
 import api from "./axios";
+import { publicApi } from "./vitrine.api";
 import type {
   Inscription,
   CreateInscriptionRequest,
@@ -79,11 +80,37 @@ export const inscriptionsApi = {
   },
 
   /**
+   * Submit a new inscription from a school's vitrine site (public — no auth,
+   * no tenant header). Tenant is resolved server-side from the slug.
+   */
+  createPublic: async (
+    data: CreateInscriptionRequest,
+    slug: string
+  ): Promise<Inscription> => {
+    const res = await publicApi.post<Inscription>(`${PUBLIC_BASE}/${slug}`, data);
+    return res.data;
+  },
+
+  /**
    * Check inscription status by dossier number (public — no auth required).
    */
   getByNumeroDossier: async (numeroDossier: string): Promise<Inscription> => {
     const res = await api.get<Inscription>(
       `${PUBLIC_BASE}/numero/${numeroDossier}`
+    );
+    return res.data;
+  },
+
+  /**
+   * Check inscription status by dossier number from a school's vitrine site
+   * (public — tenant resolved server-side from the slug).
+   */
+  getByNumeroDossierPublic: async (
+    numeroDossier: string,
+    slug: string
+  ): Promise<Inscription> => {
+    const res = await publicApi.get<Inscription>(
+      `${PUBLIC_BASE}/numero/${numeroDossier}/${slug}`
     );
     return res.data;
   },

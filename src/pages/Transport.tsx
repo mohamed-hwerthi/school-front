@@ -57,15 +57,15 @@ import {
   useUpdateCircuit,
   useDeleteCircuit,
   useAffectationsTransport,
-  useAffecterTransport,
+  useAffecterTransportPlusieurs,
   useDesaffecterTransport,
   useDeleteAffectation,
   useTransportStats,
 } from "@/hooks/useTransport";
-import type { Vehicule, Circuit, AffectationTransport, CreateCircuitRequest, CreateAffectationRequest } from "@/types/transport";
+import type { Vehicule, Circuit, AffectationTransport, CreateCircuitRequest } from "@/types/transport";
 import { useAllStudents } from "@/hooks/useStudents";
 import { getSelectedAnneeScolaire } from "@/lib/utils";
-import StudentCombobox from "@/components/StudentCombobox";
+import StudentMultiCombobox from "@/components/StudentMultiCombobox";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -329,7 +329,7 @@ function CircuitsTab() {
             </div>
             <div className="space-y-1.5">
               <Label>Vehicule</Label>
-              <Select value={form.vehiculeId ? String(form.vehiculeId) : ""} onValueChange={(v) => setForm({ ...form, vehiculeId: v ? Number(v) : undefined })}>
+              <Select value={form.vehiculeId ? String(form.vehiculeId) : ""} onValueChange={(v) => setForm({ ...form, vehiculeId: v || undefined })}>
                 <SelectTrigger className={formErrors.vehiculeId ? "border-red-500" : ""}>
                   <SelectValue placeholder="Selectionner un vehicule" />
                 </SelectTrigger>
@@ -668,7 +668,7 @@ function AffectationsTab() {
   const { data: affectations = [], isLoading } = useAffectationsTransport();
   const { data: circuits = [] } = useCircuits();
   const { data: students = [] } = useAllStudents();
-  const affecterMutation = useAffecterTransport();
+  const affecterMutation = useAffecterTransportPlusieurs();
   const desaffecterMutation = useDesaffecterTransport();
   const deleteMutation = useDeleteAffectation();
 
@@ -683,16 +683,14 @@ function AffectationsTab() {
   const [deleteTarget, setDeleteTarget] = useState<AffectationTransport | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const [form, setForm] = useState<CreateAffectationRequest>({
-    eleveId: 0,
-    circuitId: 0,
-    anneeScolaire: getSelectedAnneeScolaire(),
-  });
+  const [eleveIds, setEleveIds] = useState<string[]>([]);
+  const [circuitId, setCircuitId] = useState("");
+  const [anneeScolaire, setAnneeScolaire] = useState(getSelectedAnneeScolaire());
 
   const filtered = useMemo(() => {
     let list = affectations;
     if (filterCircuit !== "all") {
-      list = list.filter((a) => a.circuitId === Number(filterCircuit));
+      list = list.filter((a) => a.circuitId === filterCircuit);
     }
     if (search) {
       const q = search.toLowerCase();
@@ -711,7 +709,18 @@ function AffectationsTab() {
   const paginated = filtered.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const handleCreate = () => {
-    affecterMutation.mutate(form, { onSuccess: () => setShowDialog(false) });
+    if (!circuitId || eleveIds.length === 0) return;
+    affecterMutation.mutate(
+      { eleveIds, circuitId, anneeScolaire },
+      {
+        onSuccess: () => {
+          setShowDialog(false);
+          setEleveIds([]);
+          setCircuitId("");
+          setAnneeScolaire(getSelectedAnneeScolaire());
+        },
+      }
+    );
   };
 
   const handleDelete = () => {
@@ -747,7 +756,7 @@ function AffectationsTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => { setForm({ eleveId: 0, circuitId: 0, anneeScolaire: getSelectedAnneeScolaire() }); setShowDialog(true); }} className="gap-1.5">
+        <Button onClick={() => { setEleveIds([]); setCircuitId(""); setAnneeScolaire(getSelectedAnneeScolaire()); setShowDialog(true); }} className="gap-1.5">
           <UserPlus className="h-4 w-4" /> Nouvelle affectation
         </Button>
       </div>
@@ -826,22 +835,28 @@ function AffectationsTab() {
 
       {/* Create Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Nouvelle affectation</DialogTitle>
-            <DialogDescription>Affecter un eleve a un circuit de transport</DialogDescription>
+            <DialogDescription>Affecter un ou plusieurs eleves a un circuit de transport</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
-              <Label>Élève</Label>
-              <StudentCombobox
-                value={form.eleveId ? String(form.eleveId) : ""}
-                onChange={(v) => setForm({ ...form, eleveId: v })}
+              <Label>Élèves</Label>
+              <StudentMultiCombobox
+                value={eleveIds}
+                onChange={setEleveIds}
+                placeholder="Selectionner un ou plusieurs eleves"
               />
+              {eleveIds.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {eleveIds.length} élève{eleveIds.length > 1 ? "s" : ""} sélectionné{eleveIds.length > 1 ? "s" : ""}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Circuit</Label>
-              <Select value={form.circuitId ? String(form.circuitId) : ""} onValueChange={(v) => setForm({ ...form, circuitId: v })}>
+              <Select value={circuitId} onValueChange={setCircuitId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selectionner un circuit" />
                 </SelectTrigger>
@@ -854,15 +869,17 @@ function AffectationsTab() {
             </div>
             <div className="space-y-1.5">
               <Label>Annee scolaire</Label>
-              <Input value={form.anneeScolaire} onChange={(e) => setForm({ ...form, anneeScolaire: e.target.value })} placeholder={getSelectedAnneeScolaire()} />
+              <Input value={anneeScolaire} onChange={(e) => setAnneeScolaire(e.target.value)} placeholder={getSelectedAnneeScolaire()} />
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Annuler</Button>
             </DialogClose>
-            <Button onClick={handleCreate} disabled={!form.eleveId || !form.circuitId || affecterMutation.isPending}>
-              {affecterMutation.isPending ? "Enregistrement..." : "Affecter"}
+            <Button onClick={handleCreate} disabled={eleveIds.length === 0 || !circuitId || affecterMutation.isPending}>
+              {affecterMutation.isPending
+                ? "Enregistrement..."
+                : `Affecter (${eleveIds.length})`}
             </Button>
           </DialogFooter>
         </DialogContent>

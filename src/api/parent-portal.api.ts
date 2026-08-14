@@ -1,5 +1,5 @@
 import api from "./axios";
-import type { Child } from "@/types/notification";
+import type { Child, Annonce } from "@/types/notification";
 
 const BASE = "/parent-portal";
 
@@ -57,6 +57,11 @@ export interface ParentEmploiDuTemps {
 export const parentPortalApi = {
   getChildren: async (): Promise<Child[]> => {
     const res = await api.get<Child[]>(`${BASE}/children`);
+    return res.data;
+  },
+
+  getAnnonces: async (): Promise<Annonce[]> => {
+    const res = await api.get<Annonce[]>(`${BASE}/annonces`);
     return res.data;
   },
 

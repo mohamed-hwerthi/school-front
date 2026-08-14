@@ -12,7 +12,7 @@ export interface Notification {
 }
 
 export type AnnonceType = 'GENERAL' | 'URGENT' | 'EVENEMENT' | 'REUNION';
-export type DestinatairesType = 'TOUS' | 'PARENTS' | 'ENSEIGNANTS' | 'ELEVES' | 'CLASSE';
+export type DestinatairesType = 'TOUS' | 'PARENTS' | 'ENSEIGNANTS' | 'ELEVES' | 'CLASSE' | 'NIVEAU';
 
 export interface Annonce {
   id: string;
@@ -21,6 +21,8 @@ export interface Annonce {
   type: AnnonceType;
   destinataires: DestinatairesType;
   classeId?: string;
+  niveauNom?: string;
+  fichierUrl?: string;
   auteurId?: string;
   auteurName?: string;
   datePublication: string;

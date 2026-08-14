@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Loader2,
@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { VitrineConfig } from "@/types/vitrine";
-import axios from "axios";
-import env from "@/config/env";
+import { inscriptionsApi } from "@/api/inscriptions.api";
+import { vitrinePublicApi } from "@/api/vitrine.api";
+import { getSubdomainSlug } from "@/lib/vitrine-routing";
 import { notify } from "@/lib/toast";
 
 interface Props {
@@ -39,6 +40,11 @@ interface InscriptionResult {
   anneeScolaire: string;
   statut: string;
   commentaire?: string;
+}
+
+interface NiveauOption {
+  id: string;
+  name: string;
 }
 
 const STEPS = [
@@ -56,7 +62,11 @@ function getDefaultAnneeScolaire(): string {
 }
 
 export default function VitrinePreInscription({ config }: Props) {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: paramSlug } = useParams<{ slug: string }>();
+  // Subdomain mode (school-x.site) has no URL param — resolve from the host.
+  const slug = paramSlug ?? getSubdomainSlug() ?? "";
+  const [niveaux, setNiveaux] = useState<NiveauOption[]>([]);
+  const [niveauxLoading, setNiveauxLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState<InscriptionResult | null>(null);
@@ -65,6 +75,28 @@ export default function VitrinePreInscription({ config }: Props) {
   const [checkResult, setCheckResult] = useState<InscriptionResult | null>(null);
   const [checkLoading, setCheckLoading] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    setNiveauxLoading(true);
+    vitrinePublicApi
+      .getFullVitrine(slug, { preview: true })
+      .then((data) => {
+        if (!cancelled) {
+          setNiveaux((data.niveaux ?? []).map((n) => ({ id: n.id, name: n.name })));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) notify.error("Impossible de charger les niveaux.");
+      })
+      .finally(() => {
+        if (!cancelled) setNiveauxLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   const [form, setForm] = useState({
     nom: "",
@@ -86,7 +118,7 @@ export default function VitrinePreInscription({ config }: Props) {
   const canGoNext = () => {
     if (currentStep === 0) return form.nom && form.prenom && form.dateNaissance;
     if (currentStep === 1) return true; // parent info is optional
-    if (currentStep === 2) return form.anneeScolaire;
+    if (currentStep === 2) return !!form.niveauId && form.anneeScolaire;
     return true;
   };
 
@@ -106,12 +138,9 @@ export default function VitrinePreInscription({ config }: Props) {
         niveauId: form.niveauId ? form.niveauId : undefined,
         anneeScolaire: form.anneeScolaire,
       };
-      const res = await axios.post(
-        `${env.API_URL}/public/inscriptions`,
-        payload,
-        { headers: { "X-Tenant-ID": slug } }
-      );
-      const data = res.data?.data ?? res.data;
+      const data = slug
+        ? await inscriptionsApi.createPublic(payload, slug)
+        : await inscriptionsApi.create(payload);
       setSubmitted(data);
       notify.success("Inscription soumise avec succes !");
     } catch {
@@ -127,11 +156,10 @@ export default function VitrinePreInscription({ config }: Props) {
     setCheckError(null);
     setCheckResult(null);
     try {
-      const res = await axios.get(
-        `${env.API_URL}/public/inscriptions/numero/${checkDossier.trim()}`,
-        { headers: { "X-Tenant-ID": slug } }
-      );
-      setCheckResult(res.data?.data ?? res.data);
+      const res = slug
+        ? await inscriptionsApi.getByNumeroDossierPublic(checkDossier.trim(), slug)
+        : await inscriptionsApi.getByNumeroDossier(checkDossier.trim());
+      setCheckResult(res);
     } catch {
       setCheckError("Aucune inscription trouvee avec ce numero de dossier.");
     } finally {
@@ -376,6 +404,30 @@ export default function VitrinePreInscription({ config }: Props) {
                 {currentStep === 2 && (
                   <div className="space-y-4">
                     <div>
+                      <Label>Niveau <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={form.niveauId}
+                        onValueChange={(v) => set("niveauId", v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              niveauxLoading
+                                ? "Chargement des niveaux..."
+                                : "Selectionner un niveau"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {niveaux.map((n) => (
+                            <SelectItem key={n.id} value={n.id}>
+                              {n.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
                       <Label>Annee scolaire <span className="text-red-500">*</span></Label>
                       <Input value={form.anneeScolaire} onChange={(e) => set("anneeScolaire", e.target.value)} placeholder="Ex: 2025-2026" />
                     </div>
@@ -404,6 +456,10 @@ export default function VitrinePreInscription({ config }: Props) {
                       )}
                       {form.telephoneParent && <p><span className="text-gray-500">Tel :</span> {form.telephoneParent}</p>}
                       {form.emailParent && <p><span className="text-gray-500">Email :</span> {form.emailParent}</p>}
+                      <p>
+                        <span className="text-gray-500">Niveau :</span>{" "}
+                        {niveaux.find((n) => n.id === form.niveauId)?.name ?? form.niveauId}
+                      </p>
                       <p><span className="text-gray-500">Annee :</span> {form.anneeScolaire}</p>
                     </div>
                     <div className="flex justify-between pt-4">

@@ -49,7 +49,7 @@ export default function VitrineFooter({ config, pages = [] }: Props) {
                   <img
                     src={resolveFileUrl(config.logoUrl)}
                     alt={config.schoolDisplayName}
-                    className="h-12 w-12 rounded-full border-2 border-white/20 object-cover"
+                    className="h-12 w-12 rounded-xl object-contain bg-white/10 p-1"
                   />
                 )}
                 <h3 className="text-xl font-bold text-white">

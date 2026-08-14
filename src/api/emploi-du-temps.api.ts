@@ -13,6 +13,11 @@ import type {
 const BASE = "/emploi-du-temps";
 
 export const emploiDuTempsApi = {
+  getAll: async (): Promise<EmploiDuTempsEntry[]> => {
+    const res = await api.get<EmploiDuTempsEntry[]>(BASE);
+    return res.data;
+  },
+
   getByClasse: async (classeId: string): Promise<EmploiDuTempsEntry[]> => {
     const res = await api.get<EmploiDuTempsEntry[]>(`${BASE}/classe/${classeId}`);
     return res.data;
@@ -32,6 +37,20 @@ export const emploiDuTempsApi = {
   saveAll: async (classeId: string, entries: EmploiDuTempsEntry[]): Promise<EmploiDuTempsEntry[]> => {
     const res = await api.put<EmploiDuTempsEntry[]>(`${BASE}/classe/${classeId}`, entries);
     return res.data;
+  },
+
+  create: async (data: EmploiDuTempsEntry): Promise<EmploiDuTempsEntry> => {
+    const res = await api.post<EmploiDuTempsEntry>(BASE, data);
+    return res.data;
+  },
+
+  update: async (id: string, data: EmploiDuTempsEntry): Promise<EmploiDuTempsEntry> => {
+    const res = await api.put<EmploiDuTempsEntry>(`${BASE}/${id}`, data);
+    return res.data;
+  },
+
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`${BASE}/${id}`);
   },
 
   checkConflits: async (classeId: string, entries: EmploiDuTempsEntry[]): Promise<Conflit[]> => {

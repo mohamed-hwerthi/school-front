@@ -124,6 +124,15 @@ export interface VitrineAnnouncement {
   createdAt: string;
 }
 
+export interface VitrineDocument {
+  id: string;
+  titre: string;
+  fichierUrl: string;
+  type: string;
+  tailleFichier: number | null;
+  displayOrder: number;
+}
+
 export interface VitrineAnalytics {
   totalViews: number;
   viewsLast7Days: number;
@@ -152,4 +161,6 @@ export interface VitrinePublicData {
   pages: VitrinePage[];
   announcements: VitrineAnnouncement[];
   gallery: VitrineGalleryItem[];
+  documents: VitrineDocument[];
+  niveaux?: { id: string; name: string; sections: string[] }[];
 }

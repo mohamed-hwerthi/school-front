@@ -23,12 +23,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useStudent } from "@/hooks/useStudents";
 import { useSchool } from "@/hooks/useSchool";
 import { StudentProfileSkeleton } from "@/components/skeletons/StudentProfileSkeleton";
 import { generateAttestation } from "@/lib/generate-attestation";
-import { PhotoUpload, getStudentPhotoUrl } from "@/components/students/PhotoUpload";
 import { useLanguage } from "@/hooks/useLanguage";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { CommunicationDialog } from "@/components/finance/CommunicationDialog";
@@ -88,7 +87,6 @@ export default function StudentProfile() {
 
   const getInitials = () => `${student.prenom[0]}${student.nom[0]}`.toUpperCase();
   const getAvatarColor = () => avatarColors[student.id % avatarColors.length];
-  const studentPhotoUrl = getStudentPhotoUrl(student.id);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
@@ -114,9 +112,6 @@ export default function StudentProfile() {
       >
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            {studentPhotoUrl && (
-              <AvatarImage src={studentPhotoUrl} alt={`${student.prenom} ${student.nom}`} />
-            )}
             <AvatarFallback className={`text-xl font-bold ${getAvatarColor()}`}>
               {getInitials()}
             </AvatarFallback>
@@ -177,24 +172,6 @@ export default function StudentProfile() {
             Messages
           </Button>
         </div>
-      </motion.div>
-
-      {/* Photo Upload */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, duration: 0.35 }}
-        className="rounded-xl border border-border/50 bg-card p-5 shadow-sm"
-      >
-        <h3 className="font-heading text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
-          <User className="h-4 w-4 text-indigo-600" />
-          Photo de l'eleve
-        </h3>
-        <PhotoUpload
-          studentId={student.id}
-          studentName={`${student.prenom} ${student.nom}`}
-          size="lg"
-        />
       </motion.div>
 
       {/* Info Cards */}

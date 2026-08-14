@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -9,12 +9,12 @@ import {
   Loader2,
   Download,
   History,
-  Search,
   Users,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -439,15 +439,12 @@ export default function GenerationDocuments() {
                 </Select>
               </div>
             </div>
-            <div className="relative">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                placeholder="Rechercher un eleve..."
-                className="ps-9"
-              />
-            </div>
+            <SearchInput
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              placeholder="Rechercher un eleve..."
+              className="w-full md:w-64"
+            />
             <div className="max-h-[300px] overflow-y-auto border rounded-lg">
               {filteredStudents.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">

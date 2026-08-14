@@ -79,3 +79,10 @@ export interface CreateAffectationRequest {
   arretId?: string;
   anneeScolaire: string;
 }
+
+export interface BatchAffectationRequest {
+  eleveIds: string[];
+  circuitId: string;
+  arretId?: string;
+  anneeScolaire: string;
+}

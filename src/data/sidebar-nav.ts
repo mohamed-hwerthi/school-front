@@ -4,7 +4,6 @@ import {
   UserCog,
   Calendar,
   FileText,
-  Newspaper,
   BookOpen,
   Settings,
   DollarSign,
@@ -97,7 +96,6 @@ export const sidebarSections: NavSection[] = [
       { title: "Élèves", titleKey: "nav.students", icon: Users, url: "/dashboard/eleves", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
       { title: "Inscriptions", titleKey: "nav.inscriptions", icon: ClipboardList, url: "/dashboard/inscriptions", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Appel", titleKey: "nav.absences", icon: UserCheck, url: "/dashboard/absences/feuilles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Discipline", titleKey: "nav.discipline", icon: AlertTriangle, url: "/dashboard/discipline", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
       { title: "Calendrier", titleKey: "nav.calendar", icon: CalendarClock, url: "/dashboard/calendrier", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
       { title: "Niveaux & Classes", titleKey: "nav.levelsClasses", icon: GraduationCap, url: "/dashboard/config/niveaux", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
@@ -171,6 +169,7 @@ export const sidebarSections: NavSection[] = [
       { title: "Salles", titleKey: "nav.rooms", icon: Calendar, url: "/dashboard/emploi-salles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
+  /* Quiz section — temporarily hidden
   {
     label: "Quiz",
     labelKey: "nav.quiz",
@@ -183,6 +182,7 @@ export const sidebarSections: NavSection[] = [
       { title: "Résultats", titleKey: "nav.quizResults", icon: BarChart3, url: "/dashboard/quiz?tab=results" },
     ],
   },
+  */
   {
     label: "Vie scolaire",
     labelKey: "nav.schoolLife",
@@ -220,7 +220,6 @@ export const sidebarSections: NavSection[] = [
     items: [
       { title: "Annonces", titleKey: "nav.announcements", icon: Megaphone, url: "/dashboard/annonces" },
       { title: "Reunions", titleKey: "nav.meetings", icon: CalendarDays, url: "/dashboard/reunions" },
-      { title: "Circulaires", titleKey: "nav.circulars", icon: Newspaper, url: "/dashboard/circulaires", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
   {

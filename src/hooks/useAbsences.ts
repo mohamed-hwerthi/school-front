@@ -38,12 +38,17 @@ export function useAbsencesByEleve(eleveId: string) {
 }
 
 /**
- * Absence statistics.
+ * Absence statistics for a class over a given month.
+ * Derives the backend's mois/annee params from the selected date and only
+ * fires when a class and a date are both provided.
  */
-export function useAbsenceStats(classeId?: string, dateDebut?: string, dateFin?: string) {
+export function useAbsenceStats(classeId?: string, date?: string) {
+  const mois = date ? new Date(date).getMonth() + 1 : undefined;
+  const annee = date ? new Date(date).getFullYear() : undefined;
   return useQuery<AbsenceStats>({
-    queryKey: [ABSENCES_KEY, "stats", classeId, dateDebut, dateFin],
-    queryFn: () => absencesApi.getStats(classeId, dateDebut, dateFin),
+    queryKey: [ABSENCES_KEY, "stats", classeId, mois, annee],
+    queryFn: () => absencesApi.getStats(classeId as string, mois as number, annee as number),
+    enabled: !!classeId && !!date && mois !== undefined && annee !== undefined,
   });
 }
 

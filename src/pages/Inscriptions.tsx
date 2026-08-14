@@ -84,7 +84,7 @@ const STATUT_BADGE_CONFIG: Record<string, string> = {
 
 export default function InscriptionsPage() {
   const navigate = useNavigate();
-  const publicInscriptionUrl = `${window.location.origin}/inscription-publique`;
+  const publicInscriptionUrl = `${window.location.origin}/inscription`;
   const copyPublicLink = async () => {
     try {
       await navigator.clipboard.writeText(publicInscriptionUrl);
@@ -897,8 +897,9 @@ export default function InscriptionsPage() {
                       setConvertClasse("");
                       setConvertSexe("");
                     },
-                    onError: (err: any) => {
-                      notify.error(err?.response?.data?.message || err?.message || "Erreur lors de la conversion");
+                    onError: (err) => {
+                      const e = err as { response?: { data?: { message?: string } }; message?: string };
+                      notify.error(e?.response?.data?.message || e?.message || "Erreur lors de la conversion");
                     },
                   }
                 );

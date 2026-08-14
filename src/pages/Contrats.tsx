@@ -1,11 +1,10 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
 import { validate, type FormErrors } from "@/lib/validate";
 import { contratSchema, congeSchema } from "@/lib/communication-schemas";
 import {
   FileText,
-  Search,
   Filter,
   Plus,
   Edit,
@@ -22,6 +21,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -326,10 +326,13 @@ export default function ContratsPage() {
             <TabsTrigger value="conges">Conges</TabsTrigger>
           </TabsList>
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }} placeholder={t("common.searchPlaceholder")} className="ps-9" />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+              onSearch={() => setCurrentPage(0)}
+              placeholder={t("common.searchPlaceholder")}
+              className="flex-1 min-w-0"
+            />
             {activeTab === "contrats" && (
               <Select value={filterType} onValueChange={(v) => { setFilterType(v); setCurrentPage(0); }}>
                 <SelectTrigger className="w-[150px]">

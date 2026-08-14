@@ -17,6 +17,9 @@ const publicApi = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Shared with inscriptions.api for public (slug-based) pre-inscription endpoints.
+export { publicApi };
+
 // Unwrap ApiResponse wrapper
 publicApi.interceptors.response.use((response) => {
   const body = response.data;

@@ -6,7 +6,7 @@ import {
   type ParentBulletin,
   type ParentEmploiDuTemps,
 } from "@/api/parent-portal.api";
-import type { Child } from "@/types/notification";
+import type { Child, Annonce } from "@/types/notification";
 
 const PARENT_KEY = "parent-portal";
 
@@ -14,6 +14,13 @@ export function useChildren() {
   return useQuery<Child[]>({
     queryKey: [PARENT_KEY, "children"],
     queryFn: () => parentPortalApi.getChildren(),
+  });
+}
+
+export function useParentAnnonces() {
+  return useQuery<Annonce[]>({
+    queryKey: [PARENT_KEY, "annonces"],
+    queryFn: () => parentPortalApi.getAnnonces(),
   });
 }
 

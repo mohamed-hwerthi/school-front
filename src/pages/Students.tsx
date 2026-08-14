@@ -7,7 +7,6 @@ import { ScopedEmptyState } from "@/components/auth/ScopedEmptyState";
 import {
   Users,
   UserPlus,
-  Search,
   Filter,
   Edit,
   Trash2,
@@ -24,7 +23,7 @@ import {
   ShieldAlert,
   Loader2,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -82,25 +81,17 @@ export default function Students() {
 
   // Filters state
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [filterNiveau, setFilterNiveau] = useState("all");
   const [filterStatut, setFilterStatut] = useState("all");
   const [filterClasse, setFilterClasse] = useState("all");
   const [currentPage, setCurrentPage] = useState(0); // 0-indexed for backend
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(0);
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search]);
-
   // Server-side paginated query
   const { data: pagedData, isLoading, isFetching } = useStudentsPaged({
     page: currentPage,
     size: ITEMS_PER_PAGE,
-    search: debouncedSearch || undefined,
+    search: appliedSearch || undefined,
     niveau: filterNiveau !== "all" ? filterNiveau : undefined,
     classe: filterClasse !== "all" ? filterClasse : undefined,
     status: filterStatut !== "all" ? filterStatut : undefined,
@@ -154,6 +145,7 @@ export default function Students() {
   // Handlers
   const resetFilters = () => {
     setSearch("");
+    setAppliedSearch("");
     setFilterNiveau("all");
     setFilterStatut("all");
     setFilterClasse("all");
@@ -251,15 +243,13 @@ export default function Students() {
         className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
       >
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+          <SearchInput
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+              onChange={(e) => setSearch(e.target.value)}
+              onSearch={() => { setAppliedSearch(search.trim()); setCurrentPage(0); }}
               placeholder={t("students.searchPlaceholder")}
-              className="ps-9"
+              className="flex-1 min-w-0"
             />
-          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={filterNiveau} onValueChange={(v) => { setFilterNiveau(v); setFilterClasse("all"); setCurrentPage(0); }}>
               <SelectTrigger className="w-[150px]">

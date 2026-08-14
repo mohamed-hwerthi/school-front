@@ -5,11 +5,21 @@ import type {
   VitrineSection,
   VitrineGalleryItem,
   VitrineAnnouncement,
+  VitrineDocument,
   VitrineAnalytics,
   VitrineContact,
 } from "@/types/vitrine";
 
 const BASE = "/vitrine";
+
+export interface VitrineFileInfo {
+  fileName: string;
+  originalName: string;
+  filePath: string;
+  fileUrl: string;
+  contentType: string;
+  size: number;
+}
 
 export const vitrineAdminApi = {
   // Analytics
@@ -26,6 +36,15 @@ export const vitrineAdminApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data.url;
+  },
+
+  uploadDocument: async (file: File): Promise<VitrineFileInfo> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post<VitrineFileInfo>(`${BASE}/documents/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
   },
 
   // Config
@@ -116,5 +135,18 @@ export const vitrineAdminApi = {
   },
   replyToContact: async (id: string, replyText: string): Promise<void> => {
     await api.post(`${BASE}/contacts/${id}/reply`, { replyText });
+  },
+
+  // Documents
+  getDocuments: async (): Promise<VitrineDocument[]> => {
+    const res = await api.get<VitrineDocument[]>(`${BASE}/documents`);
+    return res.data;
+  },
+  createDocument: async (dto: Partial<VitrineDocument>): Promise<VitrineDocument> => {
+    const res = await api.post<VitrineDocument>(`${BASE}/documents`, dto);
+    return res.data;
+  },
+  deleteDocument: async (id: string): Promise<void> => {
+    await api.delete(`${BASE}/documents/${id}`);
   },
 };

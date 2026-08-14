@@ -54,6 +54,17 @@ export function useCreateInscription() {
 }
 
 /**
+ * Create a new inscription from a school's vitrine site (public — tenant
+ * resolved server-side from the slug).
+ */
+export function useCreateInscriptionPublic(slug: string) {
+  return useMutation({
+    mutationFn: (data: CreateInscriptionRequest) =>
+      inscriptionsApi.createPublic(data, slug),
+  });
+}
+
+/**
  * Update inscription status (admin).
  */
 export function useUpdateStatut() {
@@ -111,5 +122,17 @@ export function useCheckInscription(numeroDossier: string) {
     queryKey: [INSCRIPTIONS_KEY, "check", numeroDossier],
     queryFn: () => inscriptionsApi.getByNumeroDossier(numeroDossier),
     enabled: !!numeroDossier && numeroDossier.length > 0,
+  });
+}
+
+/**
+ * Check inscription status by dossier number from a school's vitrine site
+ * (public — tenant resolved server-side from the slug).
+ */
+export function useCheckInscriptionPublic(numeroDossier: string, slug: string) {
+  return useQuery<Inscription>({
+    queryKey: [INSCRIPTIONS_KEY, "check", numeroDossier, slug],
+    queryFn: () => inscriptionsApi.getByNumeroDossierPublic(numeroDossier, slug),
+    enabled: !!numeroDossier && numeroDossier.length > 0 && !!slug,
   });
 }

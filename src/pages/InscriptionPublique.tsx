@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -26,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateInscription, useCheckInscription } from "@/hooks/useInscriptions";
+import { useCreateInscription, useCheckInscription, useCreateInscriptionPublic, useCheckInscriptionPublic } from "@/hooks/useInscriptions";
 import { useNiveaux } from "@/hooks/useNiveaux";
+import { useVitrineNiveaux } from "@/hooks/useVitrine";
+import { getSubdomainSlug } from "@/lib/vitrine-routing";
 import type { Inscription } from "@/types/inscription";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -84,6 +87,11 @@ function getDefaultAnneeScolaire(): string {
 
 export default function InscriptionPubliquePage() {
   const { t } = useLanguage();
+  // School context: subdomain slug (school-x.site/inscription) or path slug
+  // (/vitrine/:slug/inscription). When absent, fall back to the app's own
+  // tenant header (e.g. localhost / in-app usage).
+  const { slug: paramSlug } = useParams<{ slug?: string }>();
+  const slug = paramSlug ?? getSubdomainSlug() ?? "";
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<
     Partial<Step1Data & Step2Data & Step3Data>
@@ -97,9 +105,18 @@ export default function InscriptionPubliquePage() {
   const [checkEnabled, setCheckEnabled] = useState(false);
 
   const createMutation = useCreateInscription();
-  const { niveaux } = useNiveaux();
-  const { data: checkedInscription, isLoading: isChecking } =
-    useCheckInscription(checkEnabled ? checkDossier : "");
+  const createPublicMutation = useCreateInscriptionPublic(slug);
+  const { niveaux: vitrineNiveaux, isLoading: vitrineNiveauxLoading, isError: vitrineNiveauxError } =
+    useVitrineNiveaux(slug);
+  const { niveaux: appNiveaux } = useNiveaux();
+  const niveaux = slug ? (vitrineNiveaux ?? []) : appNiveaux;
+  // Both hooks are always called (rules of hooks); the non-applicable one is
+  // disabled via an empty dossier number or empty slug.
+  const { data: checkedInscriptionPublic, isLoading: isCheckingPublic } =
+    useCheckInscriptionPublic(slug ? (checkEnabled ? checkDossier : "") : "", slug);
+  const checkFallback = useCheckInscription(slug ? "" : checkEnabled ? checkDossier : "");
+  const checkedInscription = checkedInscriptionPublic ?? checkFallback.data;
+  const isChecking = isCheckingPublic || checkFallback.isLoading;
 
   // ── Step 1 Form ─────────────────────────────────────────
 
@@ -174,7 +191,9 @@ export default function InscriptionPubliquePage() {
       anneeScolaire: formData.anneeScolaire!,
     };
 
-    createMutation.mutate(finalData, {
+    const submitMutation = slug ? createPublicMutation : createMutation;
+
+    submitMutation.mutate(finalData, {
       onSuccess: (inscription) => {
         setSubmittedInscription(inscription);
         notify.success("Inscription soumise avec succes !");
@@ -685,6 +704,16 @@ export default function InscriptionPubliquePage() {
                             <SelectValue placeholder="Selectionner un niveau" />
                           </SelectTrigger>
                           <SelectContent>
+                            {slug && vitrineNiveauxLoading && niveaux.length === 0 && (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Chargement des niveaux...
+                              </div>
+                            )}
+                            {slug && vitrineNiveauxError && niveaux.length === 0 && (
+                              <div className="px-2 py-1.5 text-sm text-red-500">
+                                Impossible de charger les niveaux.
+                              </div>
+                            )}
                             {niveaux.map((n) => (
                               <SelectItem key={n.id} value={String(n.id)}>
                                 {n.nom}
@@ -870,9 +899,9 @@ export default function InscriptionPubliquePage() {
                       </Button>
                       <Button
                         onClick={handleSubmit}
-                        disabled={createMutation.isPending}
+                        disabled={(slug ? createPublicMutation : createMutation).isPending}
                       >
-                        {createMutation.isPending ? (
+                        {(slug ? createPublicMutation : createMutation).isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin me-1" />
                             Soumission en cours...

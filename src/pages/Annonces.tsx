@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   MessageSquare,
   Send,
+  FileText,
+  Paperclip,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/components/auth/Gates";
@@ -21,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { FileUpload } from "@/components/FileUpload";
 import {
   Card,
   CardContent,
@@ -53,6 +57,13 @@ import {
 } from "@/hooks/useAnnonces";
 import { integrationsApi } from "@/api/integrations.api";
 import { useMySmsCredits } from "@/hooks/useSmsCredits";
+import { useClasses } from "@/hooks/useClasses";
+import { useNiveaux } from "@/hooks/useNiveaux";
+import { useCreneaux, useEmploiByClasse } from "@/hooks/useEmploiDuTemps";
+import { useSchool } from "@/hooks/useSchool";
+import { useActiveAnneeScolaire } from "@/hooks/useAnneeScolaire";
+import { generateEmploiDuTempsPdf } from "@/utils/generateEmploiDuTempsPdf";
+import { resolveFileUrl, extractOriginalName, uploadFile } from "@/api/storage.api";
 import type { Annonce, AnnonceType, DestinatairesType } from "@/types/notification";
 import { notify } from "@/lib/toast";
 
@@ -69,6 +80,8 @@ interface FormState {
   type: AnnonceType;
   destinataires: DestinatairesType;
   classeId?: string;
+  niveauNom?: string;
+  fichierUrl?: string;
   dateExpiration?: string;
 }
 
@@ -78,6 +91,8 @@ const initialForm: FormState = {
   type: "GENERAL",
   destinataires: "TOUS",
   classeId: "",
+  niveauNom: "",
+  fichierUrl: "",
   dateExpiration: "",
 };
 
@@ -97,6 +112,7 @@ export default function AnnoncesPage() {
     ENSEIGNANTS: t("announcements.recipientTypes.teachers"),
     ELEVES: t("announcements.recipientTypes.students"),
     CLASSE: t("announcements.recipientTypes.class"),
+    NIVEAU: t("announcements.recipientTypes.level"),
   }), [t]);
   const [showDialog, setShowDialog] = useState(false);
   const [showSmsDialog, setShowSmsDialog] = useState(false);
@@ -113,6 +129,66 @@ export default function AnnoncesPage() {
   const createAnnonce = useCreateAnnonce();
   const updateAnnonce = useUpdateAnnonce();
   const deleteAnnonce = useDeleteAnnonce();
+
+  const { data: classes = [] } = useClasses();
+  const { niveaux } = useNiveaux();
+  const { data: creneaux = [] } = useCreneaux();
+  const { school } = useSchool();
+  const { data: activeAnnee } = useActiveAnneeScolaire();
+  const [edtClasseId, setEdtClasseId] = useState("");
+  const [generatingEdt, setGeneratingEdt] = useState(false);
+  const { data: edtEntries = [] } = useEmploiByClasse(edtClasseId);
+
+  const JOURS = useMemo(() => [
+    { value: 1, label: t("common.days.monday") },
+    { value: 2, label: t("common.days.tuesday") },
+    { value: 3, label: t("common.days.wednesday") },
+    { value: 4, label: t("common.days.thursday") },
+    { value: 5, label: t("common.days.friday") },
+    { value: 6, label: t("common.days.saturday") },
+  ], [t]);
+
+  const anneeScolaireLabel =
+    activeAnnee?.label ??
+    (activeAnnee?.dateDebut
+      ? `${activeAnnee.dateDebut.slice(0, 4)} - ${activeAnnee.dateFin?.slice(0, 4) ?? ""}`
+      : undefined);
+
+  const generateAndAttachEdt = async () => {
+    if (!edtClasseId) return;
+    if (!school) {
+      notify.error(t("announcements.edtError"));
+      return;
+    }
+    const classe = classes.find((c) => c.id === edtClasseId);
+    setGeneratingEdt(true);
+    try {
+      const blob = await generateEmploiDuTempsPdf(
+        {
+          school,
+          anneeScolaireLabel,
+          classeName: classe?.fullName ?? `Classe ${edtClasseId}`,
+          jours: JOURS.map((j) => j.label),
+          creneaux,
+          entries: edtEntries,
+        },
+        { download: false }
+      );
+      if (!blob) return;
+      const file = new File(
+        [blob],
+        `Emploi_du_temps_${(classe?.fullName ?? edtClasseId).replace(/\s+/g, "_")}.pdf`,
+        { type: "application/pdf" }
+      );
+      const info = await uploadFile(file, "annonces");
+      setForm({ ...form, fichierUrl: info.fileUrl });
+      notify.success(t("announcements.edtGenerated"));
+    } catch {
+      notify.error(t("announcements.edtError"));
+    } finally {
+      setGeneratingEdt(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (typeFilter === "ALL") return annonces;
@@ -132,6 +208,8 @@ export default function AnnoncesPage() {
       type: annonce.type,
       destinataires: annonce.destinataires,
       classeId: annonce.classeId?.toString() || "",
+      niveauNom: annonce.niveauNom || "",
+      fichierUrl: annonce.fichierUrl || "",
       dateExpiration: annonce.dateExpiration
         ? new Date(annonce.dateExpiration).toISOString().slice(0, 16)
         : "",
@@ -152,6 +230,8 @@ export default function AnnoncesPage() {
       destinataires: form.destinataires,
     };
     if (form.classeId) payload.classeId = form.classeId;
+    if (form.niveauNom) payload.niveauNom = form.niveauNom;
+    if (form.fichierUrl) payload.fichierUrl = form.fichierUrl;
     if (form.dateExpiration) payload.dateExpiration = form.dateExpiration;
 
     if (editId) {
@@ -320,6 +400,9 @@ export default function AnnoncesPage() {
                   <Badge variant="outline" className="text-xs">
                     <Users className="me-1 h-3 w-3" />
                     {DEST_LABELS[annonce.destinataires]}
+                    {annonce.destinataires === "NIVEAU" && annonce.niveauNom && (
+                      <span className="ms-1">· {annonce.niveauNom}</span>
+                    )}
                   </Badge>
                   {annonce.dateExpiration && (
                     <Badge variant="outline" className="text-xs">
@@ -327,6 +410,17 @@ export default function AnnoncesPage() {
                       {t("announcements.expires")}:{" "}
                       {new Date(annonce.dateExpiration).toLocaleDateString("fr-FR")}
                     </Badge>
+                  )}
+                  {annonce.fichierUrl && (
+                    <a
+                      href={resolveFileUrl(annonce.fichierUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/5"
+                    >
+                      <FileText className="h-3 w-3" />
+                      {extractOriginalName(annonce.fichierUrl)}
+                    </a>
                   )}
                 </div>
               </CardContent>
@@ -427,7 +521,7 @@ export default function AnnoncesPage() {
 
       {/* Create/Edit dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editId ? t("announcements.editAnnouncement") : t("announcements.newAnnouncement")}
@@ -509,16 +603,139 @@ export default function AnnoncesPage() {
             </div>
             {form.destinataires === "CLASSE" && (
               <div>
-                <Label htmlFor="classeId">{t("announcements.classId")}</Label>
-                <Input
-                  id="classeId"
-                  type="number"
+                <Label htmlFor="classeId">{t("announcements.selectClass")} *</Label>
+                <Select
                   value={form.classeId}
-                  onChange={(e) => setForm({ ...form, classeId: e.target.value })}
-                  placeholder="ID de la classe"
-                />
+                  onValueChange={(v) => setForm({ ...form, classeId: v })}
+                >
+                  <SelectTrigger
+                    id="classeId"
+                    className={formErrors.classeId ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder={t("announcements.selectClass")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.fullName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formErrors.classeId && (
+                  <p className="text-xs text-red-600">{formErrors.classeId}</p>
+                )}
               </div>
             )}
+            {form.destinataires === "NIVEAU" && (
+              <div>
+                <Label htmlFor="niveauNom">{t("announcements.selectLevel")} *</Label>
+                <Select
+                  value={form.niveauNom}
+                  onValueChange={(v) => setForm({ ...form, niveauNom: v })}
+                >
+                  <SelectTrigger
+                    id="niveauNom"
+                    className={formErrors.niveauNom ? "border-red-500" : ""}
+                  >
+                    <SelectValue placeholder={t("announcements.selectLevel")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {niveaux.map((n) => (
+                      <SelectItem key={n.id} value={n.nom}>
+                        {n.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formErrors.niveauNom && (
+                  <p className="text-xs text-red-600">{formErrors.niveauNom}</p>
+                )}
+              </div>
+            )}
+            <div className="rounded-lg border p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                {t("announcements.attachment")}
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                {t("announcements.attachmentDesc")}
+              </p>
+              {form.fichierUrl ? (
+                <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate text-sm font-medium">
+                      {extractOriginalName(form.fichierUrl)}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <a
+                      href={resolveFileUrl(form.fichierUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted"
+                      title={t("announcements.viewDocument")}
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, fichierUrl: "" })}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"
+                      title={t("announcements.attachmentRemove")}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <FileUpload
+                  folder="annonces"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                  onUpload={(info) => setForm({ ...form, fichierUrl: info.fileUrl })}
+                />
+              )}
+              <div className="my-3 flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">OU</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">
+                  {t("announcements.edtClass")}
+                </Label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select value={edtClasseId} onValueChange={setEdtClasseId}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={t("announcements.selectClass")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.fullName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={generateAndAttachEdt}
+                    disabled={!edtClasseId || generatingEdt}
+                  >
+                    {generatingEdt ? (
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileText className="me-2 h-4 w-4" />
+                    )}
+                    {generatingEdt
+                      ? t("announcements.generatingEdt")
+                      : t("announcements.generateEdt")}
+                  </Button>
+                </div>
+              </div>
+            </div>
             <div>
               <Label htmlFor="dateExpiration">{t("announcements.expiryDate")}</Label>
               <Input

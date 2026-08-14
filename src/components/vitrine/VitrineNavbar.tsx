@@ -97,7 +97,7 @@ export default function VitrineNavbar({ config, pages, isPreview = false }: Prop
             <motion.img
               src={resolveFileUrl(config.logoUrl)}
               alt={config.schoolDisplayName}
-              className="h-10 w-10 rounded-full object-cover lg:h-12 lg:w-12"
+              className="h-10 w-10 rounded-xl object-contain p-1 shadow-sm ring-1 ring-white/10 lg:h-12 lg:w-12"
               whileHover={{ scale: 1.1 }}
               transition={{ type: "spring", stiffness: 300 }}
             />
@@ -198,7 +198,7 @@ export default function VitrineNavbar({ config, pages, isPreview = false }: Prop
                     <img
                       src={resolveFileUrl(config.logoUrl)}
                       alt={config.schoolDisplayName}
-                      className="h-10 w-10 rounded-full object-cover"
+                      className="h-10 w-10 rounded-xl object-contain p-1 ring-1 ring-zinc-100"
                     />
                   )}
                   <span className="text-lg font-bold text-gray-900">

@@ -143,7 +143,7 @@ export default function VitrineContactForm({ config, slug }: Props) {
                     value={form.name}
                     onChange={(e) => set("name", e.target.value)}
                     placeholder="Votre nom"
-                    className="mt-1.5"
+                    className="mt-1.5 text-gray-900"
                   />
                 </div>
                 <div>

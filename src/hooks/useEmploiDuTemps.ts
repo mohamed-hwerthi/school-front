@@ -15,6 +15,14 @@ const EDT_KEY = "emploi-du-temps";
 const CRENEAUX_KEY = "creneaux";
 const REMPLACEMENTS_KEY = "remplacements";
 
+/** Tous les créneaux de toutes les classes (vue salles / statistiques). */
+export function useAllEmplois() {
+  return useQuery<EmploiDuTempsEntry[]>({
+    queryKey: [EDT_KEY, "all"],
+    queryFn: () => emploiDuTempsApi.getAll(),
+  });
+}
+
 export function useEmploiByClasse(classeId: string) {
   return useQuery<EmploiDuTempsEntry[]>({
     queryKey: [EDT_KEY, "classe", classeId],
@@ -51,6 +59,39 @@ export function useSaveEmploi() {
   return useMutation({
     mutationFn: ({ classeId, entries }: { classeId: string; entries: EmploiDuTempsEntry[] }) =>
       emploiDuTempsApi.saveAll(classeId, entries),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [EDT_KEY] });
+    },
+  });
+}
+
+/** Crée un seul créneau d'emploi du temps (sauvegarde par créneau). */
+export function useCreateEmploiEntry() {
+  const qc = useQueryClient();
+  return useMutation<EmploiDuTempsEntry, Error, EmploiDuTempsEntry>({
+    mutationFn: (data) => emploiDuTempsApi.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [EDT_KEY] });
+    },
+  });
+}
+
+/** Modifie un seul créneau d'emploi du temps (sauvegarde par créneau). */
+export function useUpdateEmploiEntry() {
+  const qc = useQueryClient();
+  return useMutation<EmploiDuTempsEntry, Error, { id: string; data: EmploiDuTempsEntry }>({
+    mutationFn: ({ id, data }) => emploiDuTempsApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [EDT_KEY] });
+    },
+  });
+}
+
+/** Supprime un seul créneau d'emploi du temps. */
+export function useDeleteEmploiEntry() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => emploiDuTempsApi.remove(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [EDT_KEY] });
     },

@@ -3,16 +3,13 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Save,
   Loader2,
   AlertTriangle,
   Plus,
-  X,
-  Clock,
   Wand2,
-  Sparkles,
   Trash2,
   CheckCircle2,
+  FileDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,17 +34,22 @@ import {
 import {
   useEmploiByClasse,
   useCreneaux,
-  useSaveEmploi,
-  useCheckConflits,
+  useCreateEmploiEntry,
+  useUpdateEmploiEntry,
+  useDeleteEmploiEntry,
   useCreateCreneau,
   useGenerateEmploi,
 } from "@/hooks/useEmploiDuTemps";
 import { useClasses } from "@/hooks/useClasses";
 import { useTeachers } from "@/hooks/useTeachers";
 import { useModules } from "@/hooks/useModules";
-import type { EmploiDuTempsEntry, Creneau, Conflit, TeachingAssignment, TimetableGenerateResponse } from "@/types/emploi-du-temps";
+import type { EmploiDuTempsEntry, Creneau, TeachingAssignment, TimetableGenerateResponse } from "@/types/emploi-du-temps";
 import { useRooms } from "@/hooks/useRooms";
 import { useCurrentUser } from "@/hooks/useRbac";
+import { useSchool } from "@/hooks/useSchool";
+import { useActiveAnneeScolaire } from "@/hooks/useAnneeScolaire";
+import { generateEmploiDuTempsPdf } from "@/utils/generateEmploiDuTempsPdf";
+import { notify } from "@/lib/toast";
 import GenerationWizard from "@/components/emploi-du-temps/GenerationWizard";
 import TeacherEmploiDuTemps from "@/components/emploi-du-temps/TeacherEmploiDuTemps";
 
@@ -89,7 +91,7 @@ function AdminEmploiDuTemps() {
     { value: 6, label: t("common.days.saturday") },
   ], [t]);
 
-  const [selectedClasseId, setSelectedClasseId] = useState(0);
+  const [selectedClasseId, setSelectedClasseId] = useState<string>("");
   const [editingEntry, setEditingEntry] = useState<{
     jour: number;
     creneauId: string;
@@ -105,9 +107,7 @@ function AdminEmploiDuTemps() {
     heureFin: "",
     type: "COURS" as Creneau["type"],
   });
-  const [conflits, setConflits] = useState<Conflit[]>([]);
-  const [localEntries, setLocalEntries] = useState<EmploiDuTempsEntry[]>([]);
-  const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  const [savingSlot, setSavingSlot] = useState(false);
 
   // Generation state
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
@@ -119,22 +119,25 @@ function AdminEmploiDuTemps() {
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [solverTimeout, setSolverTimeout] = useState(30);
   const [generateResult, setGenerateResult] = useState<TimetableGenerateResponse | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   const { data: classes = [] } = useClasses();
   const { teachers } = useTeachers();
   const { data: modules = [] } = useModules();
-  const { rooms = [] } = useRooms();
+  const { data: rooms = [] } = useRooms();
+  const { school } = useSchool();
+  const { data: activeAnnee } = useActiveAnneeScolaire();
   const { data: creneaux = [], isLoading: creneauxLoading } = useCreneaux();
   const { data: serverEntries = [], isLoading: entriesLoading } =
     useEmploiByClasse(selectedClasseId);
 
-  const saveMutation = useSaveEmploi();
-  const checkConflitsMutation = useCheckConflits();
+  const createEntryMutation = useCreateEmploiEntry();
+  const updateEntryMutation = useUpdateEmploiEntry();
+  const deleteEntryMutation = useDeleteEmploiEntry();
   const createCreneauMutation = useCreateCreneau();
   const generateMutation = useGenerateEmploi();
 
-  // Sync server entries to local when they change and no local edits
-  const entries = hasLocalChanges ? localEntries : serverEntries;
+  const entries = serverEntries;
 
   const courseCreneaux = useMemo(
     () => creneaux.filter((c) => c.type === "COURS"),
@@ -146,7 +149,11 @@ function AdminEmploiDuTemps() {
 
   const getModuleColor = (moduleId?: string) => {
     if (!moduleId) return "";
-    return SLOT_COLORS[moduleId % SLOT_COLORS.length];
+    let hash = 0;
+    for (let i = 0; i < moduleId.length; i++) {
+      hash = (hash * 31 + moduleId.charCodeAt(i)) >>> 0;
+    }
+    return SLOT_COLORS[hash % SLOT_COLORS.length];
   };
 
   const openSlotEditor = (jour: number, creneauId: string) => {
@@ -159,79 +166,50 @@ function AdminEmploiDuTemps() {
     setEntrySalle(existing?.salle ?? "");
   };
 
-  const handleSaveSlot = () => {
-    if (!editingEntry) return;
-    const { jour, creneauId } = editingEntry;
-    const newEntry: EmploiDuTempsEntry = {
+  const handleSaveSlot = async () => {
+    if (!editingEntry || !selectedClasseId) return;
+    const { jour, creneauId, existing } = editingEntry;
+    const payload: EmploiDuTempsEntry = {
       classeId: selectedClasseId,
       jourSemaine: jour,
       creneauId,
-      moduleId: entryModuleId ? entryModuleId : undefined,
+      moduleId: entryModuleId || undefined,
       moduleName: modules.find((m) => m.id === entryModuleId)?.name,
-      enseignantId: entryEnseignantId ? entryEnseignantId : undefined,
+      enseignantId: entryEnseignantId || undefined,
       enseignantNom: teachers.find((t) => t.id === entryEnseignantId)
         ? `${teachers.find((t) => t.id === entryEnseignantId)!.prenom} ${teachers.find((t) => t.id === entryEnseignantId)!.nom}`
         : undefined,
       salle: entrySalle || undefined,
     };
 
-    const updated = [
-      ...entries.filter(
-        (e) => !(e.jourSemaine === jour && e.creneauId === creneauId)
-      ),
-      newEntry,
-    ];
-    setLocalEntries(updated);
-    setHasLocalChanges(true);
-    setEditingEntry(null);
-  };
-
-  const handleRemoveSlot = () => {
-    if (!editingEntry) return;
-    const { jour, creneauId } = editingEntry;
-    const updated = entries.filter(
-      (e) => !(e.jourSemaine === jour && e.creneauId === creneauId)
-    );
-    setLocalEntries(updated);
-    setHasLocalChanges(true);
-    setEditingEntry(null);
-  };
-
-  const handleSaveAll = () => {
-    if (!selectedClasseId) return;
-    checkConflitsMutation.mutate(
-      { classeId: selectedClasseId, entries: localEntries },
-      {
-        onSuccess: (result) => {
-          if (result.length > 0) {
-            setConflits(result);
-          } else {
-            saveMutation.mutate(
-              { classeId: selectedClasseId, entries: localEntries },
-              {
-                onSuccess: () => {
-                  setHasLocalChanges(false);
-                  setConflits([]);
-                },
-              }
-            );
-          }
-        },
+    setSavingSlot(true);
+    try {
+      if (existing?.id) {
+        await updateEntryMutation.mutateAsync({ id: existing.id, data: payload });
+      } else {
+        await createEntryMutation.mutateAsync(payload);
       }
-    );
+      notify.success("Créneau enregistré");
+      setEditingEntry(null);
+    } catch {
+      notify.error("Erreur lors de l'enregistrement du créneau");
+    } finally {
+      setSavingSlot(false);
+    }
   };
 
-  const handleForceSave = () => {
-    if (!selectedClasseId) return;
-    saveMutation.mutate(
-      { classeId: selectedClasseId, entries: localEntries },
-      {
-        onSuccess: () => {
-          setHasLocalChanges(false);
-          setConflits([]);
-        },
-      }
-    );
+  const handleRemoveSlot = async () => {
+    if (!editingEntry?.existing?.id) return;
+    setSavingSlot(true);
+    try {
+      await deleteEntryMutation.mutateAsync(editingEntry.existing.id);
+      notify.success("Créneau supprimé");
+      setEditingEntry(null);
+    } catch {
+      notify.error("Erreur lors de la suppression du créneau");
+    } finally {
+      setSavingSlot(false);
+    }
   };
 
   const handleCreateCreneau = () => {
@@ -267,7 +245,6 @@ function AdminEmploiDuTemps() {
       {
         onSuccess: (result) => {
           setGenerateResult(result);
-          setHasLocalChanges(false);
         },
       }
     );
@@ -276,6 +253,30 @@ function AdminEmploiDuTemps() {
   const handleCloseGenerateDialog = () => {
     setGenerateDialogOpen(false);
     setGenerateResult(null);
+  };
+
+  const handleExportPdf = async () => {
+    if (!selectedClasseId) return;
+    const classe = classes.find((c) => c.id === selectedClasseId);
+    setExportingPdf(true);
+    try {
+      await generateEmploiDuTempsPdf({
+        school,
+        anneeScolaireLabel:
+          activeAnnee?.label ??
+          (activeAnnee?.dateDebut
+            ? `${activeAnnee.dateDebut.slice(0, 4)} - ${activeAnnee.dateFin?.slice(0, 4) ?? ""}`
+            : undefined),
+        classeName: classe?.fullName ?? `Classe ${selectedClasseId}`,
+        jours: JOURS.map((j) => j.label),
+        creneaux,
+        entries,
+      });
+    } catch {
+      notify.error("Erreur lors de la génération du PDF");
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const availableRooms = rooms.filter((r) => r.statut !== "En maintenance");
@@ -300,7 +301,8 @@ function AdminEmploiDuTemps() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
+          {/* TODO: Generation features temporarily disabled */}
+          {/* <Button
             size="sm"
             className="gap-1.5 bg-gradient-primary shadow-btn"
             onClick={() => setWizardOpen(true)}
@@ -319,7 +321,7 @@ function AdminEmploiDuTemps() {
           >
             <Wand2 className="h-4 w-4" />
             {t("common.generate")}
-          </Button>
+          </Button> */}
           <Button
             variant="outline"
             size="sm"
@@ -329,19 +331,21 @@ function AdminEmploiDuTemps() {
             <Plus className="h-4 w-4" />
             {t("schedule.newSlot")}
           </Button>
-          {hasLocalChanges && (
+          {selectedClasseId && entries.length > 0 && (
             <Button
+              variant="outline"
               size="sm"
-              className="gap-1.5 bg-gradient-primary shadow-btn"
-              onClick={handleSaveAll}
-              disabled={saveMutation.isPending || checkConflitsMutation.isPending}
+              className="gap-1.5"
+              onClick={handleExportPdf}
+              disabled={exportingPdf}
+              title="Exporter l'emploi du temps en PDF"
             >
-              {saveMutation.isPending || checkConflitsMutation.isPending ? (
+              {exportingPdf ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className="h-4 w-4" />
+                <FileDown className="h-4 w-4" />
               )}
-              {t("common.save")}
+              {t("common.downloadPdf")}
             </Button>
           )}
         </div>
@@ -360,8 +364,6 @@ function AdminEmploiDuTemps() {
             value={selectedClasseId ? String(selectedClasseId) : ""}
             onValueChange={(v) => {
               setSelectedClasseId(v);
-              setHasLocalChanges(false);
-              setConflits([]);
             }}
           >
             <SelectTrigger className="w-[250px]">
@@ -378,38 +380,6 @@ function AdminEmploiDuTemps() {
           </Select>
         </div>
       </motion.div>
-
-      {/* Conflicts warning */}
-      {conflits.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="rounded-xl border border-orange-200 bg-orange-50 p-4 space-y-2"
-        >
-          <div className="flex items-center gap-2 text-orange-700 font-medium">
-            <AlertTriangle className="h-4 w-4" />
-            {t("schedule.unresolvedConflicts")}
-          </div>
-          <ul className="text-sm text-orange-600 list-disc ps-5 space-y-1">
-            {conflits.map((c, i) => (
-              <li key={i}>{c.message}</li>
-            ))}
-          </ul>
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" size="sm" onClick={() => setConflits([])}>
-              {t("common.edit")}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleForceSave}
-              disabled={saveMutation.isPending}
-            >
-              {t("common.save")}
-            </Button>
-          </div>
-        </motion.div>
-      )}
 
       {/* Grid */}
       {selectedClasseId ? (
@@ -473,6 +443,17 @@ function AdminEmploiDuTemps() {
                           );
                         }
                         const entry = getEntry(jour.value, creneau.id);
+                        const moduleName =
+                          entry?.moduleName ??
+                          modules.find((m) => m.id === entry?.moduleId)?.name;
+                        const teacher = entry?.enseignantNom
+                          ? entry.enseignantNom
+                          : (() => {
+                              const t = teachers.find(
+                                (x) => x.id === entry?.enseignantId
+                              );
+                              return t ? `${t.prenom} ${t.nom}` : undefined;
+                            })();
                         return (
                           <td key={jour.value} className="py-2 px-2">
                             <button
@@ -488,11 +469,11 @@ function AdminEmploiDuTemps() {
                               {entry ? (
                                 <>
                                   <div className="font-semibold truncate">
-                                    {entry.moduleName ?? "Matière"}
+                                    {moduleName ?? "Matière"}
                                   </div>
-                                  {entry.enseignantNom && (
+                                  {teacher && (
                                     <div className="text-[10px] opacity-70 truncate">
-                                      {entry.enseignantNom}
+                                      {teacher}
                                     </div>
                                   )}
                                   {entry.salle && (
@@ -588,12 +569,24 @@ function AdminEmploiDuTemps() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="salle">{t("schedule.room")}</Label>
-              <Input
-                id="salle"
-                value={entrySalle}
-                onChange={(e) => setEntrySalle(e.target.value)}
-                placeholder={t("schedule.roomPlaceholder")}
-              />
+              <Select value={entrySalle} onValueChange={setEntrySalle}>
+                <SelectTrigger id="salle">
+                  <SelectValue placeholder={t("schedule.roomPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRooms.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">
+                      Aucune salle disponible
+                    </div>
+                  ) : (
+                    availableRooms.map((room) => (
+                      <SelectItem key={room.id} value={room.nom}>
+                        {room.nom} · {room.type}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -601,15 +594,30 @@ function AdminEmploiDuTemps() {
               <Button
                 variant="destructive"
                 onClick={handleRemoveSlot}
+                disabled={savingSlot}
                 className="me-auto"
               >
+                {savingSlot ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
                 {t("common.delete")}
               </Button>
             )}
             <DialogClose asChild>
-              <Button variant="outline">{t("common.cancel")}</Button>
+              <Button variant="outline" disabled={savingSlot}>{t("common.cancel")}</Button>
             </DialogClose>
-            <Button onClick={handleSaveSlot}>{t("common.save")}</Button>
+            <Button onClick={handleSaveSlot} disabled={savingSlot}>
+              {savingSlot ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("common.saving")}
+                </>
+              ) : (
+                t("common.save")
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

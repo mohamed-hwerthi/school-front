@@ -1,13 +1,33 @@
 import { z } from "zod";
 
-export const annonceSchema = z.object({
-  titre: z.string().trim().min(3, "Titre requis (min 3 caractères)"),
-  contenu: z.string().trim().min(5, "Contenu requis (min 5 caractères)"),
-  type: z.string().optional(),
-  datePublication: z.string().optional(),
-  dateExpiration: z.string().optional(),
-  audience: z.string().optional(),
-});
+export const annonceSchema = z
+  .object({
+    titre: z.string().trim().min(3, "Titre requis (min 3 caractères)"),
+    contenu: z.string().trim().min(5, "Contenu requis (min 5 caractères)"),
+    type: z.string().optional(),
+    datePublication: z.string().optional(),
+    dateExpiration: z.string().optional(),
+    audience: z.string().optional(),
+    destinataires: z.string().optional(),
+    classeId: z.string().optional(),
+    niveauNom: z.string().optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.destinataires === "CLASSE" && !v.classeId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["classeId"],
+        message: "Sélectionnez une classe",
+      });
+    }
+    if (v.destinataires === "NIVEAU" && !v.niveauNom) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["niveauNom"],
+        message: "Sélectionnez un niveau",
+      });
+    }
+  });
 
 export type AnnonceFormValues = z.infer<typeof annonceSchema>;
 

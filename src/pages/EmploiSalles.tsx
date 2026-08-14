@@ -10,14 +10,11 @@ import {
   Edit,
   Trash2,
   Eye,
-  Download,
   ChevronLeft,
   ChevronRight,
   Building2,
   CheckCircle2,
-  AlertTriangle,
   Wrench,
-  Monitor,
   Users,
   MoreHorizontal,
   X,
@@ -50,10 +47,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRooms, useDeleteRoom } from "@/hooks/useRooms";
-import { MOCK_TIMESLOTS } from "@/data/rooms";
+import { useAllEmplois, useCreneaux } from "@/hooks/useEmploiDuTemps";
+import { useClasses } from "@/hooks/useClasses";
 import { EmploiSallesSkeleton } from "@/components/skeletons/EmploiSallesSkeleton";
-import { ROOM_TYPES, ROOM_STATUTS, JOURS, HEURES } from "@/types/room";
-import type { Room, TimeSlot, Jour } from "@/types/room";
+import { ROOM_TYPES, ROOM_STATUTS, JOURS } from "@/types/room";
+import type { Room, Jour } from "@/types/room";
+import type { EmploiDuTempsEntry } from "@/types/emploi-du-temps";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 8;
@@ -100,8 +99,9 @@ export default function EmploiSalles() {
   const navigate = useNavigate();
   const { data: rooms = [], isLoading } = useRooms();
   const deleteRoomMutation = useDeleteRoom();
-  // TimeSlots still use mock data (no backend yet)
-  const timeSlots = MOCK_TIMESLOTS;
+  const { data: allEntries = [] } = useAllEmplois();
+  const { data: creneaux = [] } = useCreneaux();
+  const { data: classes = [] } = useClasses();
 
   const [activeTab, setActiveTab] = useState<"salles" | "emploi">("salles");
   const [search, setSearch] = useState("");
@@ -117,7 +117,7 @@ export default function EmploiSalles() {
   // Dialog states
   const [viewRoom, setViewRoom] = useState<Room | null>(null);
   const [deleteRoomTarget, setDeleteRoomTarget] = useState<Room | null>(null);
-  const [viewSlot, setViewSlot] = useState<TimeSlot | null>(null);
+  const [viewEntry, setViewEntry] = useState<EmploiDuTempsEntry | null>(null);
 
   const ETAGES = useMemo(
     () => [...new Set(rooms.map((r) => r.etage))].sort((a, b) => a - b),
@@ -145,23 +145,35 @@ export default function EmploiSalles() {
   );
 
   // ─── Derived data (Emploi tab) ─────────────────────────
-  const filteredSlots = useMemo(() => {
-    return timeSlots.filter((ts) => {
-      const matchRoom = selectedRoom === "all" || ts.salleId === selectedRoom;
-      const matchJour = selectedJour === "all" || ts.jour === selectedJour;
+  const courseCreneaux = useMemo(
+    () => creneaux.filter((c) => c.type === "COURS"),
+    [creneaux]
+  );
+
+  const filteredEntries = useMemo(() => {
+    const roomName =
+      selectedRoom === "all"
+        ? null
+        : rooms.find((r) => r.id === selectedRoom)?.nom ?? null;
+    return allEntries.filter((e) => {
+      const matchRoom = !roomName || e.salle === roomName;
+      const matchJour =
+        selectedJour === "all" ||
+        (e.jourSemaine !== undefined &&
+          JOURS[e.jourSemaine - 1] === selectedJour);
       return matchRoom && matchJour;
     });
-  }, [timeSlots, selectedRoom, selectedJour]);
+  }, [allEntries, rooms, selectedRoom, selectedJour]);
 
   // Color mapping for subjects
   const subjectColorMap = useMemo(() => {
-    const subjects = [...new Set(timeSlots.map((ts) => ts.matiere))];
+    const subjects = [...new Set(allEntries.map((e) => e.moduleName).filter(Boolean))];
     const map: Record<string, string> = {};
     subjects.forEach((s, i) => {
-      map[s] = slotColors[i % slotColors.length];
+      map[s!] = slotColors[i % slotColors.length];
     });
     return map;
-  }, [timeSlots]);
+  }, [allEntries]);
 
   // Stats
   const totalRooms = rooms.length;
@@ -169,7 +181,7 @@ export default function EmploiSalles() {
   const occupees = rooms.filter((r) => r.statut === "Occupée").length;
   const enMaintenance = rooms.filter((r) => r.statut === "En maintenance").length;
   const totalCapacite = rooms.reduce((sum, r) => sum + r.capacite, 0);
-  const totalCreneaux = timeSlots.length;
+  const totalCreneaux = allEntries.length;
 
   const stats = [
     { id: "totalRooms", label: t("rooms.totalRooms"), value: totalRooms, icon: Building2, color: "bg-blue-500", bgLight: "bg-blue-50", textColor: "text-blue-700" },
@@ -205,7 +217,10 @@ export default function EmploiSalles() {
     });
   };
 
-  const getRoomName = (id: string) => rooms.find((r) => r.id === id)?.nom ?? "—";
+  const getClasseName = (id?: string) =>
+    classes.find((c) => c.id === id)?.fullName ?? "—";
+
+  const getCreneau = (id?: string) => creneaux.find((c) => c.id === id);
 
   if (isLoading) return <EmploiSallesSkeleton />;
 
@@ -228,10 +243,6 @@ export default function EmploiSalles() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Download className="h-4 w-4" />
-            {t("common.export")}
-          </Button>
           <Button
             size="sm"
             className="gap-1.5 bg-gradient-primary shadow-btn"
@@ -650,7 +661,7 @@ export default function EmploiSalles() {
                 </Button>
               )}
               <div className="sm:ms-auto text-xs text-muted-foreground">
-                {filteredSlots.length} créneau{filteredSlots.length !== 1 ? "x" : ""}
+                {filteredEntries.length} créneau{filteredEntries.length !== 1 ? "x" : ""}
               </div>
             </div>
           </motion.div>
@@ -681,40 +692,44 @@ export default function EmploiSalles() {
                   </tr>
                 </thead>
                 <tbody>
-                  {HEURES.map((heure) => {
+                  {courseCreneaux.map((creneau) => {
                     const displayJours = selectedJour === "all" ? JOURS : [selectedJour];
                     return (
-                      <tr key={heure} className="border-b border-border/50 last:border-0">
+                      <tr key={creneau.id} className="border-b border-border/50 last:border-0">
                         <td className="py-2 px-3 text-xs font-medium text-muted-foreground border-r border-border sticky start-0 bg-card z-10">
-                          {heure}
+                          <div>{creneau.label}</div>
+                          <div className="text-[10px] opacity-70">
+                            {creneau.heureDebut} - {creneau.heureFin}
+                          </div>
                         </td>
                         {displayJours.map((jour) => {
-                          const slotsInCell = filteredSlots.filter(
-                            (ts) => ts.jour === jour && ts.heureDebut === heure
+                          const jourNum = JOURS.indexOf(jour) + 1;
+                          const entriesInCell = filteredEntries.filter(
+                            (e) => e.creneauId === creneau.id && e.jourSemaine === jourNum
                           );
                           return (
                             <td
-                              key={`${jour}-${heure}`}
+                              key={`${jour}-${creneau.id}`}
                               className="py-1 px-1.5 border-border align-top"
                             >
-                              {slotsInCell.length > 0 ? (
+                              {entriesInCell.length > 0 ? (
                                 <div className="flex flex-col gap-1">
-                                  {slotsInCell.map((slot) => (
+                                  {entriesInCell.map((entry) => (
                                     <button
-                                      key={slot.id}
-                                      onClick={() => setViewSlot(slot)}
+                                      key={entry.id}
+                                      onClick={() => setViewEntry(entry)}
                                       className={`w-full rounded-lg border p-2 text-start transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer ${
-                                        subjectColorMap[slot.matiere] ?? slotColors[0]
+                                        subjectColorMap[entry.moduleName ?? ""] ?? slotColors[0]
                                       }`}
                                     >
                                       <p className="text-xs font-semibold leading-tight">
-                                        {slot.matiere}
+                                        {entry.moduleName ?? "Matière"}
                                       </p>
                                       <p className="text-[11px] opacity-80 mt-0.5">
-                                        {slot.classe} &middot; {getRoomName(slot.salleId)}
+                                        {getClasseName(entry.classeId)}
                                       </p>
                                       <p className="text-[10px] opacity-60 mt-0.5">
-                                        {slot.enseignant}
+                                        {entry.enseignantNom ?? "—"}
                                       </p>
                                     </button>
                                   ))}
@@ -742,16 +757,22 @@ export default function EmploiSalles() {
             className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
           >
             <p className="text-xs font-semibold text-muted-foreground mb-2">{t("schedule.subject")}</p>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(subjectColorMap).map(([matiere, colorClass]) => (
-                <span
-                  key={matiere}
-                  className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-medium ${colorClass}`}
-                >
-                  {matiere}
-                </span>
-              ))}
-            </div>
+            {Object.keys(subjectColorMap).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(subjectColorMap).map(([matiere, colorClass]) => (
+                  <span
+                    key={matiere}
+                    className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-medium ${colorClass}`}
+                  >
+                    {matiere}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Aucune matière planifiée pour le moment
+              </p>
+            )}
           </motion.div>
         </>
       )}
@@ -802,7 +823,7 @@ export default function EmploiSalles() {
                 <div>
                   <p className="text-xs text-muted-foreground">Créneaux attribués</p>
                   <p className="font-medium">
-                    {timeSlots.filter((ts) => ts.salleId === viewRoom.id).length}
+                    {allEntries.filter((e) => e.salle === viewRoom.nom).length}
                   </p>
                 </div>
                 <div className="col-span-2">
@@ -847,48 +868,52 @@ export default function EmploiSalles() {
       </Dialog>
 
       {/* ─── View TimeSlot Dialog ──────────────────────── */}
-      <Dialog open={!!viewSlot} onOpenChange={(open) => !open && setViewSlot(null)}>
+      <Dialog open={!!viewEntry} onOpenChange={(open) => !open && setViewEntry(null)}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Détails du créneau</DialogTitle>
             <DialogDescription>Informations du créneau horaire</DialogDescription>
           </DialogHeader>
-          {viewSlot && (
+          {viewEntry && (
             <div className="space-y-3 mt-2">
               <div
                 className={`rounded-xl border p-3 ${
-                  subjectColorMap[viewSlot.matiere] ?? slotColors[0]
+                  subjectColorMap[viewEntry.moduleName ?? ""] ?? slotColors[0]
                 }`}
               >
-                <p className="text-sm font-bold">{viewSlot.matiere}</p>
-                <p className="text-xs opacity-80 mt-0.5">{viewSlot.enseignant}</p>
+                <p className="text-sm font-bold">{viewEntry.moduleName ?? "Matière"}</p>
+                <p className="text-xs opacity-80 mt-0.5">{viewEntry.enseignantNom ?? "—"}</p>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Jour</p>
-                  <p className="font-medium">{viewSlot.jour}</p>
+                  <p className="font-medium">
+                    {viewEntry.jourSemaine ? JOURS[viewEntry.jourSemaine - 1] : "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Horaire</p>
                   <p className="font-medium">
-                    {viewSlot.heureDebut} - {viewSlot.heureFin}
+                    {getCreneau(viewEntry.creneauId)
+                      ? `${getCreneau(viewEntry.creneauId)!.heureDebut} - ${getCreneau(viewEntry.creneauId)!.heureFin}`
+                      : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Salle</p>
-                  <p className="font-medium">{getRoomName(viewSlot.salleId)}</p>
+                  <p className="font-medium">{viewEntry.salle ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Classe</p>
-                  <p className="font-medium">{viewSlot.classe}</p>
+                  <p className="font-medium">{getClasseName(viewEntry.classeId)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Niveau</p>
-                  <p className="font-medium">{viewSlot.niveau}</p>
+                  <p className="text-xs text-muted-foreground">Matière</p>
+                  <p className="font-medium">{viewEntry.moduleName ?? "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Enseignant</p>
-                  <p className="font-medium">{viewSlot.enseignant}</p>
+                  <p className="font-medium">{viewEntry.enseignantNom ?? "—"}</p>
                 </div>
               </div>
             </div>

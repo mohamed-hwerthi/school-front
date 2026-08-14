@@ -29,23 +29,31 @@ import {
   Star,
   Quote,
   Image as ImageIcon,
+  FileText,
+  Film,
+  Music,
+  FileDown,
+  Download,
 } from "lucide-react";
 import type {
   VitrineConfig,
   VitrineAnnouncement,
   VitrineGalleryItem,
+  VitrineDocument,
 } from "@/types/vitrine";
 import { resolveFileUrl } from "@/api/storage.api";
 import VitrineContactForm from "@/components/vitrine/VitrineContactForm";
+import { isSubdomainMode } from "@/lib/vitrine-routing";
 
 interface Props {
   config: VitrineConfig;
   announcements: VitrineAnnouncement[];
   gallery: VitrineGalleryItem[];
+  documents: VitrineDocument[];
   slug: string;
 }
 
-export default function VitrineModernLanding({ config, announcements, gallery, slug }: Props) {
+export default function VitrineModernLanding({ config, announcements, gallery, documents, slug }: Props) {
   return (
     <div className="overflow-x-hidden bg-[#FAFAF9] text-zinc-900">
       <ScrollProgress color={config.accentColor} />
@@ -59,6 +67,7 @@ export default function VitrineModernLanding({ config, announcements, gallery, s
       {announcements.length > 0 && (
         <AnnouncementsSection announcements={announcements} config={config} />
       )}
+      {documents.length > 0 && <DocumentsSection documents={documents} config={config} />}
       <TestimonialSection config={config} />
       <ContactShowcase config={config} slug={slug} />
       <PreInscriptionCTA config={config} />
@@ -182,7 +191,7 @@ function Marquee({ config }: { config: VitrineConfig }) {
         {[...items, ...items, ...items].map((item, i) => (
           <span
             key={i}
-            className="flex items-center gap-12 text-2xl font-bold uppercase tracking-tight text-zinc-300 sm:text-3xl"
+            className="flex items-center gap-8 text-xl font-bold uppercase tracking-tight text-zinc-300 sm:gap-12 sm:text-2xl lg:text-3xl"
           >
             {item}
             <span
@@ -377,14 +386,14 @@ function ModernHero({ config }: { config: VitrineConfig }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-wide text-white/80 backdrop-blur"
+            className="inline-flex w-fit max-w-[92vw] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium tracking-wide text-white/80 backdrop-blur"
           >
-            <Sparkles className="h-3.5 w-3.5" style={{ color: config.accentColor }} />
-            {config.slogan || "L'excellence au quotidien"}
+            <Sparkles className="h-3.5 w-3.5 shrink-0" style={{ color: config.accentColor }} />
+            <span className="truncate">{config.slogan || "L'excellence au quotidien"}</span>
           </motion.div>
 
           <h1
-            className="mt-7 font-heading text-5xl font-black leading-[1.02] tracking-tight text-white sm:text-6xl lg:text-[4.5rem] xl:text-[5rem]"
+            className="mt-7 font-heading text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[4.5rem] xl:text-[5rem]"
             style={{ textShadow: `0 0 80px ${config.accentColor}40` }}
           >
             <SplitTitle text={config.schoolDisplayName} />
@@ -524,7 +533,7 @@ function HeroVisual({ config }: { config: VitrineConfig }) {
               {config.logoUrl ? (
                 <SafeImage
                   src={config.logoUrl}
-                  className="relative z-10 h-32 w-32 rounded-3xl object-cover shadow-2xl"
+                  className="relative z-10 h-32 w-32 rounded-3xl bg-white/95 object-contain p-3 shadow-2xl"
                   fallback={<InitialsBadge name={config.schoolDisplayName} size="lg" bg={config.accentColor} />}
                 />
               ) : (
@@ -608,7 +617,7 @@ function TrustStrip({ config }: { config: VitrineConfig }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="relative flex items-center gap-4 p-6 sm:flex-col sm:items-start sm:gap-3"
+                className="relative flex items-center gap-3 p-4 sm:flex-col sm:items-start sm:gap-3 sm:p-6"
               >
                 <Icon className="h-6 w-6 transition-transform duration-500 group-hover:scale-110" style={{ color: config.primaryColor }} />
                 <div>
@@ -893,7 +902,7 @@ function GalleryStrip({ gallery, config }: { gallery: VitrineGalleryItem[]; conf
                 {/* hover overlay (only meaningful when there's a real image) */}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 {item.caption && (
-                  <figcaption className="pointer-events-none absolute bottom-4 left-4 right-4 translate-y-2 text-xs font-semibold text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <figcaption className="pointer-events-none absolute bottom-4 left-4 right-4 rounded-xl bg-black/40 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm md:translate-y-2 md:bg-transparent md:opacity-0 md:px-0 md:py-0 md:backdrop-blur-none md:transition-all md:duration-300 md:group-hover:translate-y-0 md:group-hover:opacity-100">
                     {item.caption}
                   </figcaption>
                 )}
@@ -1027,6 +1036,87 @@ function AnnouncementsSection({
                 />
               )}
             </motion.article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────────  DOCUMENTS  ─────────────────────────── */
+
+function formatFileSize(bytes: number | null | undefined): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
+}
+
+function documentIcon(type: string) {
+  if (type === "IMAGE") return <ImageIcon className="h-5 w-5 text-blue-600" />;
+  if (type === "PDF") return <FileText className="h-5 w-5 text-red-600" />;
+  if (type === "VIDEO") return <Film className="h-5 w-5 text-purple-600" />;
+  if (type === "AUDIO") return <Music className="h-5 w-5 text-green-600" />;
+  return <FileDown className="h-5 w-5 text-zinc-500" />;
+}
+
+function DocumentsSection({
+  documents,
+  config,
+}: {
+  documents: VitrineDocument[];
+  config: VitrineConfig;
+}) {
+  const items = documents.slice(0, 8);
+  return (
+    <section className="bg-white px-6 py-28 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-12">
+          <p
+            className="text-xs font-bold uppercase tracking-[0.25em]"
+            style={{ color: config.accentColor }}
+          >
+            Documents
+          </p>
+          <h2 className="mt-4 font-heading text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
+            Ressources utiles
+          </h2>
+          <p className="mt-4 max-w-xl text-lg leading-relaxed text-zinc-600">
+            Consultez et telechargez les documents de l'etablissement : inscriptions, reglements,
+            menus, plannings...
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((doc, i) => (
+            <motion.a
+              key={doc.id}
+              href={resolveFileUrl(doc.fichierUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: i * 0.06 }}
+              className="group flex items-center gap-4 rounded-3xl border border-zinc-200/70 bg-[#FAFAF9] p-5 transition-all hover:-translate-y-1 hover:shadow-xl"
+            >
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-110"
+                style={{ backgroundColor: config.accentColor + "15" }}
+              >
+                {documentIcon(doc.type)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-zinc-900 group-hover:underline">
+                  {doc.titre}
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                  {doc.type}
+                  {doc.tailleFichier ? ` · ${formatFileSize(doc.tailleFichier)}` : ""}
+                </p>
+              </div>
+              <Download className="h-4 w-4 shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-700" />
+            </motion.a>
           ))}
         </div>
       </div>
@@ -1260,8 +1350,12 @@ function PreInscriptionCTA({ config }: { config: VitrineConfig }) {
 
             <div className="flex flex-col gap-3 lg:items-end">
               <a
-                href={config.ctaPrimaryUrl ?? "/inscription"}
-                className="group inline-flex w-fit items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-bold text-zinc-900 shadow-xl transition-transform hover:scale-[1.02]"
+                href={
+                  isSubdomainMode()
+                    ? (config.ctaPrimaryUrl ?? "/inscription")
+                    : `/vitrine/${slug}/inscription`
+                }
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-bold text-zinc-900 shadow-xl transition-transform hover:scale-[1.02] sm:w-fit"
               >
                 {config.ctaPrimaryLabel ?? "Pre-inscription en ligne"}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -1269,7 +1363,7 @@ function PreInscriptionCTA({ config }: { config: VitrineConfig }) {
               {config.contactPhone && (
                 <a
                   href={`tel:${config.contactPhone}`}
-                  className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 px-8 py-4 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/10"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/20 px-8 py-4 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/10 sm:w-fit"
                 >
                   <Phone className="h-4 w-4" />
                   {config.contactPhone}

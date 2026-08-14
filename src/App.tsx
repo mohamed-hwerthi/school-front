@@ -69,7 +69,6 @@ const FeuillesJourPage = lazy(() => import("./pages/FeuillesJour"));
 const FeuilleDetailsPage = lazy(() => import("./pages/FeuilleDetails"));
 const EmploiDuTempsPage = lazy(() => import("./pages/EmploiDuTemps"));
 const VolumeHorairePage = lazy(() => import("./pages/VolumeHoraire"));
-const DisciplinePage = lazy(() => import("./pages/Discipline"));
 const AnneeScolairePage = lazy(() => import("./pages/AnneeScolaire"));
 const ConseilClassePage = lazy(() => import("./pages/ConseilClasse"));
 const BilanAnnuelPage = lazy(() => import("./pages/BilanAnnuel"));
@@ -186,6 +185,7 @@ const App = () => (
             {/* Public pages */}
             <Route path="/vitrine/:slug" element={<Suspense fallback={<PageLoader />}><VitrineSite /></Suspense>} />
             <Route path="/vitrine/:slug/:pageSlug" element={<Suspense fallback={<PageLoader />}><VitrineSite /></Suspense>} />
+            <Route path="/vitrine/:slug/inscription" element={<Suspense fallback={<PageLoader />}><InscriptionPubliquePage /></Suspense>} />
             <Route path="/inscription" element={<Suspense fallback={<PageLoader />}><InscriptionPubliquePage /></Suspense>} />
             {/* Quiz passation (student exam taking) */}
             <Route path="/quiz/:quizId" element={<Suspense fallback={<PageLoader />}><QuizPassationPage /></Suspense>} />
@@ -293,7 +293,6 @@ const App = () => (
               <Route path="comparatif" element={<G roles={MANAGEMENT_ROLES}><ComparatifPerformancesPage /></G>} />
 
               {/* Vie scolaire */}
-              <Route path="discipline" element={<G roles={STAFF_ROLES}><DisciplinePage /></G>} />
               <Route path="bibliotheque" element={<G roles={MANAGEMENT_ROLES}><BibliothequePage /></G>} />
               <Route path="transport" element={<G roles={MANAGEMENT_ROLES}><TransportPage /></G>} />
               <Route path="cantine" element={<G roles={MANAGEMENT_ROLES}><CantinePage /></G>} />

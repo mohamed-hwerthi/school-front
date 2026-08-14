@@ -7,6 +7,7 @@ import type {
   TransportStats,
   CreateCircuitRequest,
   CreateAffectationRequest,
+  BatchAffectationRequest,
 } from "@/types/transport";
 
 const VEHICULES_KEY = "vehicules";
@@ -130,6 +131,18 @@ export function useAffecterTransport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateAffectationRequest) => affectationsTransportApi.affecter(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [AFFECTATIONS_TRANSPORT_KEY] });
+      qc.invalidateQueries({ queryKey: [CIRCUITS_KEY] });
+    },
+  });
+}
+
+/** Affecte plusieurs élèves à un même circuit en une seule opération. */
+export function useAffecterTransportPlusieurs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: BatchAffectationRequest) => affectationsTransportApi.affecterPlusieurs(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [AFFECTATIONS_TRANSPORT_KEY] });
       qc.invalidateQueries({ queryKey: [CIRCUITS_KEY] });

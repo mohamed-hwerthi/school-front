@@ -36,18 +36,15 @@ export const absencesApi = {
     return res.data;
   },
 
-  getStats: async (classeId?: string, dateDebut?: string, dateFin?: string): Promise<AbsenceStats> => {
-    const params = new URLSearchParams();
-    if (classeId) params.set("classeId", String(classeId));
-    if (dateDebut) params.set("dateDebut", dateDebut);
-    if (dateFin) params.set("dateFin", dateFin);
-
-    const res = await api.get<AbsenceStats>(`${BASE}/stats?${params.toString()}`);
+  getStats: async (classeId: string, mois: number, annee: number): Promise<AbsenceStats> => {
+    const res = await api.get<AbsenceStats>(`${BASE}/stats`, {
+      params: { classeId, mois, annee },
+    });
     return res.data;
   },
 
   justifier: async (id: string, motif: string): Promise<Absence> => {
-    const res = await api.patch<Absence>(`${BASE}/${id}/justifier`, { motif });
+    const res = await api.post<Absence>(`${BASE}/${id}/justifier`, { motif });
     return res.data;
   },
 

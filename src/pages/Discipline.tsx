@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ShieldAlert,
-  Search,
   Filter,
   Plus,
   Edit,
@@ -16,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/components/auth/Gates";
 import { Badge } from "@/components/ui/badge";
@@ -352,10 +352,13 @@ export default function DisciplinePage() {
             <TabsTrigger value="sanctions">Sanctions</TabsTrigger>
           </TabsList>
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }} placeholder="Rechercher..." className="ps-9" />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+              onSearch={() => setCurrentPage(0)}
+              placeholder="Rechercher..."
+              className="flex-1 min-w-0"
+            />
             {activeTab === "incidents" && (
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={filterType} onValueChange={(v) => { setFilterType(v); setCurrentPage(0); }}>

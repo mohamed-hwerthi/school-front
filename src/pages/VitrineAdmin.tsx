@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Loader2, Globe, FileText, Image, Megaphone, ExternalLink, Plus, Trash2, Eye, EyeOff, Upload, Edit2, BarChart3, Mail, MessageSquare, CheckCircle2, Clock, Send, User } from "lucide-react";
+import { Loader2, Globe, FileText, Image, Megaphone, ExternalLink, Plus, Trash2, Eye, EyeOff, Upload, Edit2, BarChart3, Mail, MessageSquare, CheckCircle2, Clock, Send, User, FileDown, ImageIcon, Film, Music } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,15 +26,20 @@ import {
   useUpdateVitrineAnnouncement,
   useDeleteVitrineAnnouncement,
   useVitrineUpload,
+  useVitrineDocuments,
+  useUploadVitrineDocument,
+  useCreateVitrineDocument,
+  useDeleteVitrineDocument,
   useVitrineContacts,
   useVitrineUnreadCount,
   useMarkContactAsRead,
   useReplyToContact,
 } from "@/hooks/useVitrineAdmin";
-import type { VitrineConfig, VitrinePage, VitrineAnnouncement, VitrineContact } from "@/types/vitrine";
+import type { VitrineConfig, VitrinePage, VitrineAnnouncement, VitrineContact, VitrineDocument } from "@/types/vitrine";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useAuth } from "@/hooks/useAuth";
 import { buildVitrineUrl } from "@/lib/vitrine-routing";
+import { resolveFileUrl, extractOriginalName } from "@/api/storage.api";
 
 export default function VitrineAdmin() {
   const { t } = useLanguage();
@@ -72,10 +77,15 @@ export default function VitrineAdmin() {
             onClick={() => {
               const slug = user?.tenantSlug || user?.tenantId?.replaceAll("_", "-");
               if (!slug) return;
-              window.open(buildVitrineUrl(slug, { preview: true }), "_blank", "noopener,noreferrer");
+              window.open(
+                buildVitrineUrl(slug, config?.published ? {} : { preview: true }),
+                "_blank",
+                "noopener,noreferrer"
+              );
             }}
           >
-            <ExternalLink className="me-2 h-4 w-4" /> Pr&eacute;visualiser
+            <ExternalLink className="me-2 h-4 w-4" />
+            {config?.published ? "Voir le site" : "Pr&eacute;visualiser"}
           </Button>
         </div>
       </div>
@@ -84,6 +94,7 @@ export default function VitrineAdmin() {
         <TabsList>
           <TabsTrigger value="config"><Globe className="me-2 h-4 w-4" /> Configuration</TabsTrigger>
           <TabsTrigger value="gallery"><Image className="me-2 h-4 w-4" /> Galerie</TabsTrigger>
+          <TabsTrigger value="documents"><FileText className="me-2 h-4 w-4" /> Documents</TabsTrigger>
           <TabsTrigger value="announcements"><Megaphone className="me-2 h-4 w-4" /> Annonces</TabsTrigger>
           <TabsTrigger value="analytics"><BarChart3 className="me-2 h-4 w-4" /> Statistiques</TabsTrigger>
           <TabsTrigger value="messages" className="relative">
@@ -106,6 +117,10 @@ export default function VitrineAdmin() {
 
         <TabsContent value="gallery" className="mt-6">
           <GalleryManager />
+        </TabsContent>
+
+        <TabsContent value="documents" className="mt-6">
+          <DocumentsTab />
         </TabsContent>
 
         <TabsContent value="announcements" className="mt-6">
@@ -881,6 +896,207 @@ function EditAnnouncementDialog({ announcement, onClose }: { announcement: Vitri
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ======================== DOCUMENTS TAB ========================
+
+function documentTypeFromFile(file: File): string {
+  if (file.type.startsWith("image/")) return "IMAGE";
+  if (file.type === "application/pdf") return "PDF";
+  if (file.type.startsWith("video/")) return "VIDEO";
+  if (file.type.startsWith("audio/")) return "AUDIO";
+  return "DOCUMENT";
+}
+
+function formatFileSize(bytes: number): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
+}
+
+function documentIcon(type: string) {
+  if (type === "IMAGE") return <ImageIcon className="h-5 w-5 text-blue-600" />;
+  if (type === "PDF") return <FileText className="h-5 w-5 text-red-600" />;
+  if (type === "VIDEO") return <Film className="h-5 w-5 text-purple-600" />;
+  if (type === "AUDIO") return <Music className="h-5 w-5 text-green-600" />;
+  return <FileDown className="h-5 w-5 text-muted-foreground" />;
+}
+
+function DocumentsTab() {
+  const { data: documents = [], isLoading } = useVitrineDocuments();
+  const deleteDocument = useDeleteVitrineDocument();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Documents ({documents.length})</h3>
+          <p className="text-sm text-muted-foreground">
+            Images, PDF et documents visibles dans le site vitrine.
+          </p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm"><Plus className="me-2 h-4 w-4" /> Ajouter un document</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <AddDocumentForm onDone={() => setDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      ) : documents.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-14 text-muted-foreground">
+            <FileText className="mb-3 h-10 w-10 opacity-40" />
+            <p className="text-sm">Aucun document pour le moment</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              Ajoutez des images, PDF ou documents pour les afficher sur le site vitrine.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {documents.map((doc) => (
+            <Card key={doc.id}>
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/40">
+                  {documentIcon(doc.type)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{doc.titre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {doc.type}
+                    {doc.tailleFichier ? ` · ${formatFileSize(doc.tailleFichier)}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => window.open(resolveFileUrl(doc.fichierUrl), "_blank", "noopener,noreferrer")}
+                    title="Ouvrir"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => { if (confirm("Supprimer ce document ?")) deleteDocument.mutate(doc.id); }}
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddDocumentForm({ onDone }: { onDone: () => void }) {
+  const upload = useUploadVitrineDocument();
+  const createDocument = useCreateVitrineDocument();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [titre, setTitre] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    if (!titre.trim()) {
+      setTitre(extractOriginalName(f.name) || f.name);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!file) {
+      setError("Selectionnez un fichier");
+      return;
+    }
+    if (!titre.trim()) {
+      setError("Saisissez un titre");
+      return;
+    }
+    setError("");
+    setUploading(true);
+    try {
+      const info = await upload.mutateAsync(file);
+      createDocument.mutate(
+        {
+          titre: titre.trim(),
+          fichierUrl: info.fileUrl,
+          type: documentTypeFromFile(file),
+          tailleFichier: info.size,
+          displayOrder: 0,
+        },
+        { onSuccess: onDone }
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur lors de l'upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Ajouter un document</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 py-4">
+        {error && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
+        )}
+        <div className="space-y-1.5">
+          <Label>Titre</Label>
+          <Input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Titre du document" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Fichier (image, PDF, Word, Excel, PowerPoint...)</Label>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {file ? file.name : "Selectionner un fichier"}
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.mp4,.mp3"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          {file && <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>}
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onDone}>Annuler</Button>
+        <Button onClick={handleSave} disabled={uploading || !file || !titre.trim()}>
+          {uploading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+          Ajouter
+        </Button>
+      </DialogFooter>
+    </>
   );
 }
 

@@ -5,7 +5,6 @@ import { validate, type FormErrors } from "@/lib/validate";
 import { factureSchema, echeancierSchema } from "@/lib/finance-schemas";
 import {
   Receipt,
-  Search,
   Filter,
   Plus,
   Eye,
@@ -23,6 +22,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -97,6 +97,7 @@ export default function FacturesPage() {
   }), [t]);
   const [activeTab, setActiveTab] = useState("factures");
   const [search, setSearch] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [filterStatut, setFilterStatut] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -170,6 +171,7 @@ export default function FacturesPage() {
   const hasFilters = search || filterStatut !== "all";
   const resetFilters = () => {
     setSearch("");
+    setSearchText("");
     setFilterStatut("all");
     setCurrentPage(0);
   };
@@ -283,10 +285,13 @@ export default function FacturesPage() {
           </TabsList>
           {activeTab === "factures" && (
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-              <div className="relative flex-1 min-w-0">
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }} placeholder={t("invoices.searchPlaceholder")} className="ps-9" />
-              </div>
+              <SearchInput
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onSearch={() => { setSearch(searchText.trim()); setCurrentPage(0); }}
+                placeholder={t("invoices.searchPlaceholder")}
+                className="flex-1 min-w-0"
+              />
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={filterStatut} onValueChange={(v) => { setFilterStatut(v); setCurrentPage(0); }}>
                   <SelectTrigger className="w-[180px]">

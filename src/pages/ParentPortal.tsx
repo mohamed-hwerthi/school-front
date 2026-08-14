@@ -9,6 +9,8 @@ import {
   GraduationCap,
   Receipt,
   TrendingUp,
+  Megaphone,
+  Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,13 +47,38 @@ import {
   useChildAbsences,
   useChildBulletin,
   useChildEmploiDuTemps,
+  useParentAnnonces,
 } from "@/hooks/useParentPortal";
 import { useFacturesByEleve } from "@/hooks/useFactures";
-import type { Child } from "@/types/notification";
+import { resolveFileUrl, extractOriginalName } from "@/api/storage.api";
+import type { Child, Annonce, AnnonceType, DestinatairesType } from "@/types/notification";
 import { useLanguage } from "@/hooks/useLanguage";
 import { CURRENCY } from "@/config/currency";
 
 const JOURS = ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+const TYPE_COLORS: Record<AnnonceType, string> = {
+  GENERAL: "bg-blue-100 text-blue-700",
+  URGENT: "bg-red-100 text-red-700 border-red-300",
+  EVENEMENT: "bg-purple-100 text-purple-700",
+  REUNION: "bg-emerald-100 text-emerald-700",
+};
+
+const DEST_LABELS: Record<DestinatairesType, string> = {
+  TOUS: "Tous",
+  PARENTS: "Parents",
+  ENSEIGNANTS: "Enseignants",
+  ELEVES: "Élèves",
+  CLASSE: "Classe",
+  NIVEAU: "Niveau",
+};
+
+const TYPE_LABELS: Record<AnnonceType, string> = {
+  GENERAL: "Général",
+  URGENT: "Urgent",
+  EVENEMENT: "Événement",
+  REUNION: "Réunion",
+};
 
 function ChildSelector({
   children,
@@ -544,6 +571,88 @@ function FacturesTab({ studentId }: { studentId: string }) {
   );
 }
 
+function AnnoncesTab() {
+  const { t } = useLanguage();
+  const { data: annonces = [], isLoading } = useParentAnnonces();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (annonces.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Megaphone className="mx-auto mb-3 h-10 w-10" />
+        <p>{t("announcements.parentAnnoncesEmpty")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {annonces.map((annonce) => (
+        <Card
+          key={annonce.id}
+          className={`relative ${
+            annonce.type === "URGENT" ? "border-red-300 border-2" : ""
+          }`}
+        >
+          {annonce.type === "URGENT" && (
+            <div className="absolute -top-2 -end-2">
+              <Badge className="bg-red-500 text-white animate-pulse">
+                {TYPE_LABELS[annonce.type]}
+              </Badge>
+            </div>
+          )}
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{annonce.titre}</CardTitle>
+            <CardDescription className="text-xs">
+              {annonce.auteurName && `Par ${annonce.auteurName} - `}
+              {new Date(annonce.datePublication).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground whitespace-pre-line">
+              {annonce.contenu}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge variant="outline" className={TYPE_COLORS[annonce.type]}>
+                {TYPE_LABELS[annonce.type]}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                <Users className="me-1 h-3 w-3" />
+                {DEST_LABELS[annonce.destinataires]}
+                {annonce.destinataires === "NIVEAU" && annonce.niveauNom && (
+                  <span className="ms-1">· {annonce.niveauNom}</span>
+                )}
+              </Badge>
+            </div>
+            {annonce.fichierUrl && (
+              <a
+                href={resolveFileUrl(annonce.fichierUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+              >
+                <Download className="h-4 w-4" />
+                {t("announcements.viewDocument")} · {extractOriginalName(annonce.fichierUrl)}
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function ParentPortalPage() {
   const { t } = useLanguage();
   const { data: children = [], isLoading } = useChildren();
@@ -617,7 +726,7 @@ export default function ParentPortalPage() {
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="notes" className="w-full">
-                  <TabsList className="grid w-full grid-cols-5">
+                  <TabsList className="grid w-full grid-cols-6">
                     <TabsTrigger value="notes" className="text-xs sm:text-sm">
                       <BookOpen className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
                       Notes
@@ -637,6 +746,10 @@ export default function ParentPortalPage() {
                     <TabsTrigger value="factures" className="text-xs sm:text-sm">
                       <Receipt className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
                       Factures
+                    </TabsTrigger>
+                    <TabsTrigger value="annonces" className="text-xs sm:text-sm">
+                      <Megaphone className="me-1 h-3 w-3 sm:h-4 sm:w-4" />
+                      Annonces
                     </TabsTrigger>
                   </TabsList>
 
@@ -664,6 +777,10 @@ export default function ParentPortalPage() {
 
                   <TabsContent value="factures" className="mt-4">
                     <FacturesTab studentId={selectedChild.id} />
+                  </TabsContent>
+
+                  <TabsContent value="annonces" className="mt-4">
+                    <AnnoncesTab />
                   </TabsContent>
                 </Tabs>
               </CardContent>

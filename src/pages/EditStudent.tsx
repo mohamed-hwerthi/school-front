@@ -95,7 +95,6 @@ export default function EditStudent() {
         transition={{ duration: 0.35, delay: 0.1 }}
       >
         <StudentForm
-          studentId={student.id}
           defaultValues={{
             nom: student.nom,
             prenom: student.prenom,

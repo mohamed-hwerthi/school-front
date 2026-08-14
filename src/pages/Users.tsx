@@ -7,7 +7,6 @@ import { createUserSchema, editUserSchema } from "@/lib/user-schema";
 import {
   Users,
   UserPlus,
-  Search,
   Filter,
   Edit,
   Trash2,
@@ -20,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -129,6 +129,7 @@ export default function UsersPage() {
     PARENT: t("users.roles.parent"),
   }), [t]);
   const [search, setSearch] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -178,6 +179,7 @@ export default function UsersPage() {
 
   const resetFilters = () => {
     setSearch("");
+    setSearchText("");
     setFilterRole("all");
     setCurrentPage(0);
   };
@@ -290,15 +292,13 @@ export default function UsersPage() {
       {/* Filters */}
       <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible" className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+          <SearchInput
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onSearch={() => { setSearch(searchText.trim()); setCurrentPage(0); }}
               placeholder={t("users.searchPlaceholder")}
-              className="ps-9"
+              className="flex-1 min-w-0"
             />
-          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); setCurrentPage(0); }}>
               <SelectTrigger className="w-[170px]">

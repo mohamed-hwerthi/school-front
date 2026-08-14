@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Clock,
-  Search,
   Plus,
   Edit,
   Trash2,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -307,18 +307,16 @@ export default function PointagePage() {
         className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
       >
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(0);
-              }}
-              placeholder={t("attendance.searchPlaceholder")}
-              className="ps-9"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(0);
+            }}
+            onSearch={() => setCurrentPage(0)}
+            placeholder={t("attendance.searchPlaceholder")}
+            className="flex-1 min-w-0"
+          />
           <Select
             value={filterStatut}
             onValueChange={(v) => {

@@ -39,18 +39,16 @@ export interface EleveAlert {
 }
 
 export interface AbsenceStats {
+  classeId: string;
+  mois: number;
+  annee: number;
   totalAbsences: number;
   totalRetards: number;
-  tauxPresence: number;
-  alertLevel?: AlertLevel;
-  elevesEnAlerte?: EleveAlert[];
-  parEleve: Array<{
-    eleveId: string;
-    nom: string;
-    prenom: string;
-    absences: number;
-    retards: number;
-  }>;
+  totalJustifiees: number;
+  totalNonJustifiees: number;
+  tauxAbsenteisme: number;
+  alertLevel: AlertLevel;
+  elevesEnAlerte: EleveAlert[];
 }
 
 export interface AbsenceSettings {

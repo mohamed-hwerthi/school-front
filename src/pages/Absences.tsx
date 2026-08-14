@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   ClipboardList,
-  Search,
   Filter,
   X,
   Loader2,
@@ -20,6 +19,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { PermissionGate } from "@/components/auth/Gates";
 import { Badge } from "@/components/ui/badge";
@@ -105,8 +105,7 @@ export default function AbsencesPage() {
   }, [absencesRaw, allStudents]);
   const { data: stats } = useAbsenceStats(
     absencesClasseId || undefined,
-    undefined,
-    undefined
+    selectedDate
   );
   const justifyMutation = useJustifyAbsence();
   const deleteMutation = useDeleteAbsence();
@@ -170,6 +169,8 @@ export default function AbsencesPage() {
     });
   };
 
+  const tauxPresence = stats ? Math.max(0, 100 - (stats.tauxAbsenteisme ?? 0)) : 0;
+
   const statCards = [
     {
       label: "Total Absences",
@@ -187,7 +188,7 @@ export default function AbsencesPage() {
     },
     {
       label: "Taux de Presence",
-      value: `${(stats?.tauxPresence ?? 0).toFixed(1)}%`,
+      value: `${tauxPresence.toFixed(1)}%`,
       icon: TrendingUp,
       color: "bg-emerald-50",
       textColor: "text-emerald-700",
@@ -307,15 +308,13 @@ export default function AbsencesPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
-                placeholder="Rechercher un eleve..."
-                className="ps-9"
-              />
-            </div>
+            <SearchInput
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
+              onSearch={() => setCurrentPage(0)}
+              placeholder="Rechercher un eleve..."
+              className="flex-1 min-w-[200px]"
+            />
             <Select value={filterType} onValueChange={(v) => { setFilterType(v); setCurrentPage(0); }}>
               <SelectTrigger className="w-[130px]">
                 <Filter className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />

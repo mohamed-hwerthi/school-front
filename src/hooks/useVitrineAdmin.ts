@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { vitrineAdminApi } from "@/api/vitrine-admin.api";
 import { notify } from "@/lib/toast";
-import type { VitrineConfig, VitrinePage, VitrineSection, VitrineAnnouncement, VitrineGalleryItem, VitrineAnalytics, VitrineContact } from "@/types/vitrine";
+import type { VitrineConfig, VitrinePage, VitrineSection, VitrineAnnouncement, VitrineGalleryItem, VitrineDocument, VitrineAnalytics, VitrineContact } from "@/types/vitrine";
 
 const KEYS = {
   config: ["vitrine-admin", "config"] as const,
@@ -9,6 +9,7 @@ const KEYS = {
   sections: (pageId: string) => ["vitrine-admin", "sections", pageId] as const,
   gallery: ["vitrine-admin", "gallery"] as const,
   announcements: ["vitrine-admin", "announcements"] as const,
+  documents: ["vitrine-admin", "documents"] as const,
   analytics: ["vitrine-admin", "analytics"] as const,
   contacts: ["vitrine-admin", "contacts"] as const,
   unreadCount: ["vitrine-admin", "contacts", "unread"] as const,
@@ -222,6 +223,46 @@ export function useDeleteVitrineAnnouncement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.announcements });
       notify.success("Annonce supprimée");
+    },
+    onError: (e: Error) => notify.error(e.message),
+  });
+}
+
+// ======================== DOCUMENTS ========================
+
+export function useVitrineDocuments() {
+  return useQuery({
+    queryKey: KEYS.documents,
+    queryFn: vitrineAdminApi.getDocuments,
+  });
+}
+
+export function useUploadVitrineDocument() {
+  return useMutation({
+    mutationFn: (file: File) => vitrineAdminApi.uploadDocument(file),
+    onError: (e: Error) => notify.error(e.message),
+  });
+}
+
+export function useCreateVitrineDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: Partial<VitrineDocument>) => vitrineAdminApi.createDocument(dto),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.documents });
+      notify.success("Document ajouté");
+    },
+    onError: (e: Error) => notify.error(e.message),
+  });
+}
+
+export function useDeleteVitrineDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => vitrineAdminApi.deleteDocument(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.documents });
+      notify.success("Document supprimé");
     },
     onError: (e: Error) => notify.error(e.message),
   });

@@ -7,6 +7,7 @@ import type {
   TransportStats,
   CreateCircuitRequest,
   CreateAffectationRequest,
+  BatchAffectationRequest,
 } from "@/types/transport";
 
 // ---- Vehicules ----
@@ -95,6 +96,11 @@ export const affectationsTransportApi = {
 
   affecter: async (data: CreateAffectationRequest): Promise<AffectationTransport> => {
     const res = await api.post<AffectationTransport>("/affectations-transport", data);
+    return res.data;
+  },
+
+  affecterPlusieurs: async (data: BatchAffectationRequest): Promise<AffectationTransport[]> => {
+    const res = await api.post<AffectationTransport[]>("/affectations-transport/batch", data);
     return res.data;
   },
 

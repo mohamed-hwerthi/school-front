@@ -26,7 +26,7 @@ export const circuitSchema = z
   .object({
     nom: z.string().trim().min(2, "Nom requis"),
     description: z.string().optional(),
-    vehiculeId: z.number().int().positive().optional(),
+    vehiculeId: z.string().optional(),
     heureDepart: z.string().min(1, "Heure départ requise"),
     heureRetour: z.string().min(1, "Heure retour requise"),
   })

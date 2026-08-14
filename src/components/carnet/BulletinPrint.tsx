@@ -138,11 +138,12 @@ export default function BulletinPrint({
             <div style={{ marginTop: "2mm" }}>
               السنة الدراسية :{" "}
               <span style={{ display: "inline-block", borderBottom: "1px dotted #555", padding: "0 1mm" }}>
-                20....{y2}
+                20{y1}
+                
               </span>{" "}
               /{" "}
               <span style={{ display: "inline-block", borderBottom: "1px dotted #555", padding: "0 1mm" }}>
-                20....{y1}
+                20{y2}
               </span>
             </div>
           </div>

@@ -60,7 +60,7 @@ export function generateFichePaiePDF(fp: FichePaieData, school: SchoolInfo) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...DARK);
-  doc.text(`${school.adresse}, ${school.ville}`, marginL, y + 5);
+  doc.text(`${school.adresse}`, marginL, y + 5);
   doc.text(`Tel: ${school.telephone}   Email: ${school.email}`, marginL, y + 9);
 
   // Right side: title + meta
@@ -249,7 +249,7 @@ export function generateFichePaiePDF(fp: FichePaieData, school: SchoolInfo) {
   doc.setFontSize(7);
   doc.setTextColor(...MID);
   doc.text(
-    `${school.nom} — ${school.adresse}, ${school.ville} — Tel : ${school.telephone}`,
+    `${school.nom} — ${school.adresse} — Tel : ${school.telephone}`,
     W / 2, H - 9, { align: "center" }
   );
   doc.text("Document genere automatiquement par le systeme de gestion scolaire.", W / 2, H - 5, { align: "center" });

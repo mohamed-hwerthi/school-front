@@ -49,7 +49,7 @@ export function generateFacturePDF(
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`${school.adresse}, ${school.ville}`, marginL, 23);
+  doc.text(`${school.adresse}`, marginL, 23);
   doc.text(`Tel: ${school.telephone}  |  ${school.email}`, marginL, 29);
 
   doc.setFont("helvetica", "bold");
@@ -234,7 +234,7 @@ export function generateFacturePDF(
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
   doc.text(
-    `${school.nom} — ${school.adresse}, ${school.ville} — Tel: ${school.telephone} — ${school.email}`,
+    `${school.nom} — ${school.adresse} — Tel: ${school.telephone} — ${school.email}`,
     W / 2,
     footerY,
     { align: "center" }

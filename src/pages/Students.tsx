@@ -328,7 +328,16 @@ export default function Students() {
                 students.map((student) => (
                   <tr
                     key={student.id}
-                    className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => navigate(`/dashboard/eleves/${student.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/dashboard/eleves/${student.id}`);
+                      }
+                    }}
+                    className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors cursor-pointer focus:outline-none focus-visible:bg-muted/30"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
@@ -356,7 +365,7 @@ export default function Students() {
                     </td>
                     <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">{student.niveau}</td>
                     <td className="py-3 px-4 hidden lg:table-cell text-muted-foreground">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <span>{student.telephoneParent}</span>
                         <WhatsAppButton phone={student.telephoneParent} className="h-7 w-7" size={16} />
                       </div>
@@ -366,7 +375,7 @@ export default function Students() {
                         {student.statut}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-end">
+                    <td className="py-3 px-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="hidden sm:flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => navigate(`/dashboard/eleves/${student.id}`)}>
                           <Eye className="h-4 w-4" />

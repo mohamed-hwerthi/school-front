@@ -96,6 +96,10 @@ export default function Configuration() {
   const handleSave = () => {
     updateSettings.mutate(
       {
+        // Le backend écrase TOUS les champs du DTO : sans ce spread, les champs
+        // gérés par la page "Informations de l'école" (logo, adresse, email,
+        // site web, année de création, description) seraient effacés.
+        ...settings,
         schoolName,
         schoolNameAr: schoolNameAr || null,
         anneeScolaire,

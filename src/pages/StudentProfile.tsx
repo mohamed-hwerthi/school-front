@@ -27,7 +27,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useStudent } from "@/hooks/useStudents";
 import { useSchool } from "@/hooks/useSchool";
 import { StudentProfileSkeleton } from "@/components/skeletons/StudentProfileSkeleton";
-import { generateAttestation } from "@/lib/generate-attestation";
+import {
+  generateAttestation,
+  generateAttestationFr,
+  generateAttestationInscription,
+} from "@/lib/generate-attestation";
 import { useLanguage } from "@/hooks/useLanguage";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { CommunicationDialog } from "@/components/finance/CommunicationDialog";
@@ -158,10 +162,28 @@ export default function StudentProfile() {
             variant="outline"
             size="sm"
             className="gap-1.5"
+            onClick={() => generateAttestationFr(student, school)}
+          >
+            <FileText className="h-4 w-4 shrink-0" />
+            Attestation de présence
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
             onClick={() => generateAttestation(student, school)}
           >
-            <FileText className="h-4 w-4" />
-            Attestation
+            <FileText className="h-4 w-4 shrink-0" />
+            <span dir="rtl">شهادة حضور</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => generateAttestationInscription(student, school)}
+          >
+            <FileText className="h-4 w-4 shrink-0" />
+            Attestation d'inscription
           </Button>
           <Button
             size="sm"

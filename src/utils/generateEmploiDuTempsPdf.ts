@@ -110,7 +110,7 @@ export async function generateEmploiDuTempsPdf(
     ? `<img src="${safe(school.logo)}" style="height:52px;width:52px;object-fit:contain;border-radius:8px;background:#ffffff;padding:3px;margin-right:12px;" />`
     : "";
 
-  const contactLine = [school.adresse, school.ville, school.telephone, school.email]
+  const contactLine = [school.adresse, school.telephone, school.email]
     .filter(Boolean)
     .join("  |  ");
 

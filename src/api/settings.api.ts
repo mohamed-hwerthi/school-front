@@ -5,14 +5,13 @@ export interface SchoolSettingsDTO {
   schoolNameAr: string | null;
   anneeScolaire: string;
   adresse: string | null;
+  adresseAr: string | null;
   telephone: string | null;
   directeurName: string | null;
   directeurNameAr: string | null;
   delegationRegionale: string | null;
   delegationRegionaleAr: string | null;
   logo: string | null;
-  ville: string | null;
-  villeAr: string | null;
   email: string | null;
   siteWeb: string | null;
   anneeCreation: string | null;

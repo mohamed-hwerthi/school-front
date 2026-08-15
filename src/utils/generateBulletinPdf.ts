@@ -49,7 +49,6 @@ export function generateBulletinPdf(
   doc.setFont("helvetica", "normal");
   const contactLine = [
     template?.adresse || school.adresse,
-    school.ville,
     template?.telephone || school.telephone,
     template?.email || school.email,
   ]

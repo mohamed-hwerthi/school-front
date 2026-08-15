@@ -65,12 +65,14 @@ export default function SchoolInfo() {
       nomAr: school.nomAr,
       logo: school.logo,
       adresse: school.adresse,
-      ville: school.ville,
-      villeAr: school.villeAr,
+      adresseAr: school.adresseAr,
       telephone: school.telephone,
       email: school.email,
       siteWeb: school.siteWeb,
       directeur: school.directeur,
+      directeurAr: school.directeurAr,
+      delegationRegionale: school.delegationRegionale,
+      delegationRegionaleAr: school.delegationRegionaleAr,
       anneeCreation: school.anneeCreation,
       description: school.description,
     },
@@ -83,12 +85,14 @@ export default function SchoolInfo() {
         nomAr: school.nomAr,
         logo: school.logo,
         adresse: school.adresse,
-        ville: school.ville,
-        villeAr: school.villeAr,
+        adresseAr: school.adresseAr,
         telephone: school.telephone,
         email: school.email,
         siteWeb: school.siteWeb,
         directeur: school.directeur,
+        directeurAr: school.directeurAr,
+        delegationRegionale: school.delegationRegionale,
+        delegationRegionaleAr: school.delegationRegionaleAr,
         anneeCreation: school.anneeCreation,
         description: school.description,
       });
@@ -249,29 +253,61 @@ export default function SchoolInfo() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="directeurAr">اسم المدير (بالعربية)</Label>
+              <Input
+                id="directeurAr"
+                dir="rtl"
+                {...register("directeurAr")}
+                placeholder="اسم المدير"
+              />
+              <p className="text-xs text-muted-foreground">
+                Imprimé au pied des attestations.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="delegationRegionale">Délégation régionale</Label>
+              <Input
+                id="delegationRegionale"
+                {...register("delegationRegionale")}
+                placeholder="Ex : Béja"
+              />
+              <p className="text-xs text-muted-foreground">
+                Imprimée en en-tête des bulletins.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="delegationRegionaleAr">
+                المندوبية الجهوية للتربية (بالعربية)
+              </Label>
+              <Input
+                id="delegationRegionaleAr"
+                dir="rtl"
+                {...register("delegationRegionaleAr")}
+                placeholder="مثال : باجة"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="adresse">Adresse</Label>
               <Input
                 id="adresse"
                 {...register("adresse")}
                 placeholder="Adresse de l'école"
               />
+              <p className="text-xs text-muted-foreground">
+                Imprimée sur l'attestation de présence française.
+              </p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ville">Ville</Label>
+              <Label htmlFor="adresseAr">العنوان (بالعربية)</Label>
               <Input
-                id="ville"
-                {...register("ville")}
-                placeholder="Ville"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="villeAr">المدينة (بالعربية)</Label>
-              <Input
-                id="villeAr"
+                id="adresseAr"
                 dir="rtl"
-                {...register("villeAr")}
-                placeholder="المدينة بالعربية"
+                {...register("adresseAr")}
+                placeholder="عنوان المدرسة بالعربية"
               />
+              <p className="text-xs text-muted-foreground">
+                Imprimée sur l'attestation de présence arabe.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="telephone">Téléphone</Label>

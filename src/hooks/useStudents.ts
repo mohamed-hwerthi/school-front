@@ -68,6 +68,35 @@ export function useUpdateStudent() {
 }
 
 /**
+ * Block / unblock student mutation.
+ * Blocking also flips the student to "Inactif" (and unblocking back to "Actif").
+ */
+export function useSetStudentBlocked() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, blocked }: { id: string; blocked: boolean }) =>
+      studentsApi.setBlocked(id, blocked),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [STUDENTS_KEY] });
+    },
+  });
+}
+
+/**
+ * Change student status only (Actif / Inactif / En attente).
+ */
+export function useSetStudentStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, statut }: { id: string; statut: Student["statut"] }) =>
+      studentsApi.setStatus(id, statut),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [STUDENTS_KEY] });
+    },
+  });
+}
+
+/**
  * Delete student mutation.
  */
 export function useDeleteStudent() {

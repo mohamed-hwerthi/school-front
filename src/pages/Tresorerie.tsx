@@ -26,7 +26,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { useTresorerie } from "@/hooks/useTresorerie";
+import { useTresorerie, useTresorerieDetail } from "@/hooks/useTresorerie";
+import TableauFinancierMensuel from "@/components/finance/TableauFinancierMensuel";
+import { useAnneeContext } from "@/hooks/useAnneeContext";
 import { CURRENCY } from "@/config/currency";
 
 const MOIS_LABELS: Record<string, string> = {
@@ -50,9 +52,11 @@ const fadeUp = {
 };
 
 function fmt(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
-  return n.toLocaleString();
+  if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+  return n.toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
@@ -71,7 +75,23 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 export default function Tresorerie() {
+  const { selectedAnnee } = useAnneeContext();
+  const annee = selectedAnnee?.label ?? "";
   const { data, isLoading } = useTresorerie();
+  const { data: detail } = useTresorerieDetail();
+
+  // La requete est desactivee tant qu'aucune annee n'est selectionnee :
+  // sans ce cas, la page resterait bloquee sur le squelette de chargement.
+  if (!annee) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-foreground">Tresorerie</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Selectionnez une annee scolaire pour afficher les flux financiers.
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (
@@ -156,7 +176,7 @@ export default function Tresorerie() {
     },
     {
       label: "Eleves a jour",
-      value: `${data.elevesAJour} / ${data.totalEleves}`,
+      value: `${data.elevesAJour} / ${data.elevesSuivis}`,
       icon: UserCheck,
       bgLight: "bg-emerald-50",
       textColor: "text-emerald-700",
@@ -164,14 +184,17 @@ export default function Tresorerie() {
     },
     {
       label: "Eleves en retard",
-      value: `${data.elevesEnRetard} / ${data.totalEleves}`,
+      value: `${data.elevesEnRetard} / ${data.elevesSuivis}`,
       icon: AlertTriangle,
       bgLight: "bg-red-50",
       textColor: "text-red-700",
       iconBg: "bg-red-100",
     },
     {
-      label: "Total eleves",
+      // L'ecart avec elevesSuivis signale les eleves sans aucun frais rattache.
+      label: data.elevesSuivis < data.totalEleves
+        ? `Eleves (${data.elevesSuivis} avec echeancier)`
+        : "Total eleves",
       value: String(data.totalEleves),
       icon: Users,
       bgLight: "bg-blue-50",
@@ -186,7 +209,7 @@ export default function Tresorerie() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Tresorerie</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Vue globale des flux financiers — {ANNEE}
+          Vue globale des flux financiers{annee ? ` — ${annee}` : ""}
         </p>
       </div>
 
@@ -209,7 +232,7 @@ export default function Tresorerie() {
                 </div>
                 <kpi.arrow className={`h-5 w-5 ${kpi.arrowColor}`} />
               </div>
-              <p className="font-heading text-2xl font-bold text-foreground tracking-tight">{kpi.value}</p>
+              <p className="font-heading text-xl xl:text-2xl font-bold text-foreground tracking-tight tabular-nums">{kpi.value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
             </div>
           </motion.div>
@@ -237,6 +260,13 @@ export default function Tresorerie() {
           </motion.div>
         ))}
       </div>
+
+      {/* Grand livre mensuel */}
+      {detail && (
+        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={8}>
+          <TableauFinancierMensuel data={detail} />
+        </motion.div>
+      )}
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -291,8 +321,8 @@ export default function Tresorerie() {
           custom={9}
           className="rounded-2xl border border-border/40 bg-card p-5 shadow-sm flex flex-col"
         >
-          <h3 className="text-sm font-semibold text-foreground mb-1">Repartition des depenses</h3>
-          <p className="text-xs text-muted-foreground mb-4">Par categorie</p>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Repartition des sorties</h3>
+          <p className="text-xs text-muted-foreground mb-4">Depenses, salaires et caisse</p>
           {pieData.length > 0 ? (
             <>
               <div className="flex-1 flex items-center justify-center">
@@ -333,7 +363,7 @@ export default function Tresorerie() {
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-              Aucune depense enregistree
+              Aucune sortie enregistree
             </div>
           )}
         </motion.div>

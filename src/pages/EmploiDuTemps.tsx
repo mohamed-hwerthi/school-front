@@ -359,14 +359,14 @@ function AdminEmploiDuTemps() {
         animate="visible"
         className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Select
             value={selectedClasseId ? String(selectedClasseId) : ""}
             onValueChange={(v) => {
               setSelectedClasseId(v);
             }}
           >
-            <SelectTrigger className="w-[250px]">
+            <SelectTrigger className="w-full sm:w-[250px]">
               <Calendar className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
               <SelectValue placeholder={t("schedule.selectClass")} />
             </SelectTrigger>

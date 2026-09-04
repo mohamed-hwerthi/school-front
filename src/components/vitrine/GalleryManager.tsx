@@ -83,7 +83,7 @@ export default function GalleryManager() {
       >
         <div className="text-center text-muted-foreground">
           <ImageIcon className="mx-auto mb-2 h-8 w-8" />
-          <p className="text-sm">Glissez-d&eacute;posez des images ici</p>
+          <p className="text-sm">Glissez-déposez des images ici</p>
           <p className="text-xs">ou utilisez le bouton ci-dessus</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function GalleryManager() {
               />
             </div>
             <div>
-              <Label>L&eacute;gende (optionnel)</Label>
+              <Label>Légende (optionnel)</Label>
               <Input
                 value={form.caption}
                 onChange={(e) => setForm({ ...form, caption: e.target.value })}
@@ -149,7 +149,7 @@ export default function GalleryManager() {
               />
             </div>
             <div>
-              <Label>Cat&eacute;gorie (optionnel)</Label>
+              <Label>Catégorie (optionnel)</Label>
               <Input
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}

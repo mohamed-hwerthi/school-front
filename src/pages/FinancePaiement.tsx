@@ -13,7 +13,6 @@ import {
   Download,
   Eye,
   Edit,
-  Trash2,
   ChevronLeft,
   ChevronRight,
   X,
@@ -23,7 +22,6 @@ import {
   MoreHorizontal,
   BarChart3,
   PieChart as PieChartIcon,
-  Users,
   Send,
 } from "lucide-react";
 import {
@@ -71,16 +69,13 @@ import {
   useAllPaiements,
   useCreatePaiement,
   useUpdatePaiement,
-  useDeletePaiement,
 } from "@/hooks/useFinance";
 import { useAllStudents } from "@/hooks/useStudents";
-import StudentCombobox from "@/components/StudentCombobox";
 import ExportButton from "@/components/ExportButton";
 import { FinanceSkeleton } from "@/components/skeletons/FinanceSkeleton";
 import { PaiementForm } from "@/components/finance/PaiementForm";
 import { CommunicationDialog } from "@/components/finance/CommunicationDialog";
 import { AppelDialog } from "@/components/finance/AppelDialog";
-import { SuiviEleveCard } from "@/components/finance/SuiviEleveCard";
 import {
   MOIS_SCOLAIRES,
   MOIS_LABELS,
@@ -106,7 +101,7 @@ const fadeUp = {
   }),
 };
 
-type TabKey = "overview" | "paiements" | "suivi" | "relances";
+type TabKey = "overview" | "paiements" | "relances";
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 
@@ -124,7 +119,6 @@ export default function FinancePaiement() {
   const { school } = useSchool();
   const createPaiement = useCreatePaiement();
   const updatePaiementMutation = useUpdatePaiement();
-  const deletePaiementMutation = useDeletePaiement();
   const getTypeFrais = (id: string) => typesFrais.find((t) => t.id === id);
   const getStudent = (id: string) => students.find((s) => s.id === id);
 
@@ -135,6 +129,10 @@ export default function FinancePaiement() {
       reference: p.reference || `PAY-${p.id}`,
       studentName: student ? `${student.prenom} ${student.nom}` : `Eleve #${p.eleveId}`,
       classe: student?.classe ?? "—",
+      parentName: student
+        ? `${student.prenomParent ?? ""} ${student.nomParent ?? ""}`.trim()
+        : "",
+      parentTelephone: student?.telephoneParent ?? "",
       typeFrais: tf?.nom ?? "—",
       mois: p.mois,
        anneeScolaire: p.anneeScolaire || getSelectedAnneeScolaire(),
@@ -158,9 +156,6 @@ export default function FinancePaiement() {
   const [filterStatut, setFilterStatut] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Suivi tab
-  const [selectedEleveId, setSelectedEleveId] = useState<string>("");
-
   // Relances tab
   const [selectedRelanceIds, setSelectedRelanceIds] = useState<number[]>([]);
 
@@ -168,7 +163,6 @@ export default function FinancePaiement() {
   const [viewPaiement, setViewPaiement] = useState<Paiement | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editPaiement, setEditPaiement] = useState<Paiement | null>(null);
-  const [deletePaiementTarget, setDeletePaiementTarget] = useState<Paiement | null>(null);
   const [smsTarget, setSmsTarget] = useState<{ student: Student; solde: number } | null>(null);
   const [emailTarget, setEmailTarget] = useState<{ student: Student; solde: number } | null>(null);
   const [appelTarget, setAppelTarget] = useState<Student | null>(null);
@@ -338,17 +332,6 @@ export default function FinancePaiement() {
     );
   };
 
-  const handleDeletePaiement = () => {
-    if (!deletePaiementTarget) return;
-    deletePaiementMutation.mutate(deletePaiementTarget.id, {
-      onSuccess: () => {
-        notify.success("Paiement supprimé");
-        setDeletePaiementTarget(null);
-      },
-      onError: (err) => notify.error(err.message),
-    });
-  };
-
   const toggleRelanceSelection = (eleveId: string) => {
     setSelectedRelanceIds((prev) =>
       prev.includes(eleveId) ? prev.filter((id) => id !== eleveId) : [...prev, eleveId]
@@ -377,18 +360,12 @@ export default function FinancePaiement() {
   const openEmail = (student: Student, solde: number) => setEmailTarget({ student, solde });
   const openAppel = (student: Student) => setAppelTarget(student);
 
-  const selectedSuiviStudent = selectedEleveId ? getStudent(selectedEleveId) : undefined;
-  const selectedSuiviSolde = selectedSuiviStudent
-    ? (eleveSoldes[selectedSuiviStudent.id]?.du ?? 0) - (eleveSoldes[selectedSuiviStudent.id]?.paye ?? 0)
-    : 0;
-
   if (loading) return <FinanceSkeleton />;
 
   // ─── Render tabs ──────────────────────────────────
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: "overview", label: "Vue d'ensemble", icon: BarChart3 },
     { key: "paiements", label: "Liste paiements", icon: DollarSign },
-    { key: "suivi", label: "Suivi par élève", icon: Users },
     { key: "relances", label: "Relances", icon: Send },
   ];
 
@@ -674,7 +651,7 @@ export default function FinancePaiement() {
                             </Badge>
                           </td>
                           <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
-                            {MOIS_LABELS[p.mois] ?? p.mois}
+                            {p.mois ? (MOIS_LABELS[p.mois] ?? p.mois) : "—"}
                           </td>
                           <td className="py-3 px-4 hidden lg:table-cell">
                             <span className="text-emerald-600 font-medium">
@@ -718,14 +695,6 @@ export default function FinancePaiement() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                                onClick={() => setDeletePaiementTarget(p)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -742,11 +711,6 @@ export default function FinancePaiement() {
                                   {student && (
                                     <>
                                       <DropdownMenuItem
-                                        onClick={() => openSMS(student, p.montantDu - p.montantPaye)}
-                                      >
-                                        <MessageSquare className="h-4 w-4 me-2" /> Relance SMS
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
                                         onClick={() => openEmail(student, p.montantDu - p.montantPaye)}
                                       >
                                         <Mail className="h-4 w-4 me-2" /> Relance Email
@@ -755,12 +719,6 @@ export default function FinancePaiement() {
                                   )}
                                   <DropdownMenuItem onClick={() => handleDownloadRecu(p)}>
                                     <FileDown className="h-4 w-4 me-2" /> Recu PDF
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => setDeletePaiementTarget(p)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4 me-2" /> Supprimer
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -826,55 +784,6 @@ export default function FinancePaiement() {
               </div>
             )}
           </motion.div>
-        </>
-      )}
-
-      {/* ═══════════════ SUIVI PAR ÉLÈVE ═══════════════ */}
-      {activeTab === "suivi" && (
-        <>
-          <motion.div
-            custom={6}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
-          >
-            <div className="w-full max-w-md">
-              <StudentCombobox
-                value={selectedEleveId}
-                onChange={setSelectedEleveId}
-                filter={(s) => activeStudents.some((a) => String(a.id) === String(s.id))}
-              />
-            </div>
-          </motion.div>
-
-          {selectedSuiviStudent ? (
-            <motion.div
-              custom={7}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-            >
-              <SuiviEleveCard
-                student={selectedSuiviStudent}
-                onAppel={() => openAppel(selectedSuiviStudent)}
-                onSMS={() => openSMS(selectedSuiviStudent, selectedSuiviSolde)}
-                onEmail={() => openEmail(selectedSuiviStudent, selectedSuiviSolde)}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              custom={7}
-              variants={fadeUp}
-              initial="hidden"
-              animate="visible"
-              className="rounded-xl border border-border/50 bg-card p-12 text-center text-muted-foreground"
-            >
-              <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">Sélectionnez un élève</p>
-              <p className="text-xs mt-1">pour voir son suivi détaillé des paiements</p>
-            </motion.div>
-          )}
         </>
       )}
 
@@ -1056,7 +965,7 @@ export default function FinancePaiement() {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Mois</p>
-                    <p className="font-medium">{MOIS_LABELS[viewPaiement.mois] ?? viewPaiement.mois}</p>
+                    <p className="font-medium">{viewPaiement.mois ? (MOIS_LABELS[viewPaiement.mois] ?? viewPaiement.mois) : "—"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Montant dû</p>
@@ -1142,39 +1051,6 @@ export default function FinancePaiement() {
               submitLabel="Modifier"
             />
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── Delete Confirmation Dialog ────────────── */}
-      <Dialog
-        open={!!deletePaiementTarget}
-        onOpenChange={(open) => !open && setDeletePaiementTarget(null)}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce paiement ?{" "}
-              {deletePaiementTarget && (() => {
-                const s = getStudent(deletePaiementTarget.eleveId);
-                const tf = getTypeFrais(deletePaiementTarget.typeFraisId);
-                return (
-                  <span className="font-semibold text-foreground">
-                    {s ? `${s.prenom} ${s.nom}` : ""} — {tf?.nom ?? ""} ({MOIS_LABELS[deletePaiementTarget.mois] ?? deletePaiementTarget.mois})
-                  </span>
-                );
-              })()}
-              . Cette action est irréversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-2">
-            <DialogClose asChild>
-              <Button variant="outline">Annuler</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDeletePaiement}>
-              Supprimer
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -52,11 +52,11 @@ export default function VitrineAnalyticsDashboard() {
         {/* Views by page */}
         <Card>
           <CardHeader>
-            <CardTitle>Pages les plus visit&eacute;es (30j)</CardTitle>
+            <CardTitle>Pages les plus visitées (30j)</CardTitle>
           </CardHeader>
           <CardContent>
             {data.viewsByPage.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Pas encore de donn&eacute;es</p>
+              <p className="text-sm text-muted-foreground">Pas encore de données</p>
             ) : (
               <div className="space-y-3">
                 {data.viewsByPage.map((item, i) => {
@@ -89,7 +89,7 @@ export default function VitrineAnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             {data.viewsByDay.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Pas encore de donn&eacute;es</p>
+              <p className="text-sm text-muted-foreground">Pas encore de données</p>
             ) : (
               <div className="flex h-48 items-end gap-1">
                 {data.viewsByDay.map((day, i) => {

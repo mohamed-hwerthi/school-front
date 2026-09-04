@@ -20,6 +20,7 @@ import {
   UserX,
   GraduationCap,
   MoreHorizontal,
+  KeyRound,
   X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ import { useTeachers } from "@/hooks/useTeachers";
 import { TeachersListSkeleton } from "@/components/skeletons/TeachersListSkeleton";
 import { ExcelImportDialog } from "@/components/teachers/ExcelImportDialog";
 import DisponibiliteGrid from "@/components/teachers/DisponibiliteGrid";
+import { TeacherAccountCard } from "@/components/teachers/TeacherAccountCard";
+import { useSchool } from "@/hooks/useSchool";
 import { SPECIALITES, STATUTS_ENSEIGNANT } from "@/types/teacher";
 import type { Teacher } from "@/types/teacher";
 import ExportButton from "@/components/ExportButton";
@@ -76,6 +79,7 @@ export default function Teachers() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { teachers, isLoading: loading, deleteTeacher: removeTeacher, importTeachers } = useTeachers();
+  const { school } = useSchool();
 
   const [search, setSearch] = useState("");
   const [filterSpecialite, setFilterSpecialite] = useState("all");
@@ -87,6 +91,7 @@ export default function Teachers() {
   const [deleteTeacherTarget, setDeleteTeacherTarget] = useState<Teacher | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [dispoTeacher, setDispoTeacher] = useState<Teacher | null>(null);
+  const [accountTeacher, setAccountTeacher] = useState<Teacher | null>(null);
 
   // ─── Derived data ─────────────────────────────────────
   const filtered = useMemo(() => {
@@ -298,7 +303,16 @@ export default function Teachers() {
                 paginated.map((teacher) => (
                   <tr
                     key={teacher.id}
-                    className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => setViewTeacher(teacher)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setViewTeacher(teacher);
+                      }
+                    }}
+                    className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors cursor-pointer focus:outline-none focus-visible:bg-muted/30"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
@@ -322,7 +336,7 @@ export default function Teachers() {
                         {teacher.statut}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-end">
+                    <td className="py-3 px-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600" onClick={() => setViewTeacher(teacher)}>
                           <Eye className="h-4 w-4" />
@@ -346,6 +360,17 @@ export default function Teachers() {
                             <Calendar className="h-4 w-4" />
                           </Button>
                         </PermissionGate>
+                        <PermissionGate perms={["MANAGE_USERS"]}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-violet-600 hidden sm:inline-flex"
+                            onClick={() => setAccountTeacher(teacher)}
+                            title="Gestion du compte"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
                         <PermissionGate perms={["DELETE_TEACHERS"]}>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" onClick={() => setDeleteTeacherTarget(teacher)}>
                             <Trash2 className="h-4 w-4" />
@@ -367,6 +392,9 @@ export default function Teachers() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDispoTeacher(teacher)}>
                               <Calendar className="h-4 w-4 me-2" /> Disponibilités
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setAccountTeacher(teacher)}>
+                              <KeyRound className="h-4 w-4 me-2" /> Gestion du compte
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDeleteTeacherTarget(teacher)} className="text-red-600">
                               <Trash2 className="h-4 w-4 me-2" /> {t("common.delete")}
@@ -447,6 +475,10 @@ export default function Teachers() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
+                  <p className="text-xs text-muted-foreground">Matricule</p>
+                  <p className="font-medium font-mono">{viewTeacher.matricule || "—"}</p>
+                </div>
+                <div>
                   <p className="text-xs text-muted-foreground">{t("teachers.speciality")}</p>
                   <p className="font-medium">{viewTeacher.specialite}</p>
                 </div>
@@ -504,6 +536,23 @@ export default function Teachers() {
         onOpenChange={setImportOpen}
         onImport={importTeachers}
       />
+
+      {/* ─── Gestion du compte Dialog ─────────────────── */}
+      <Dialog open={!!accountTeacher} onOpenChange={(open) => !open && setAccountTeacher(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {accountTeacher?.prenom} {accountTeacher?.nom}
+            </DialogTitle>
+            <DialogDescription>
+              Identifiants de connexion à l'espace enseignant.
+            </DialogDescription>
+          </DialogHeader>
+          {accountTeacher && (
+            <TeacherAccountCard teacher={accountTeacher} schoolName={school?.nom} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Disponibilités Dialog ────────────────────── */}
       {dispoTeacher && (

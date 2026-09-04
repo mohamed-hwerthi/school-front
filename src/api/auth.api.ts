@@ -46,6 +46,15 @@ export const authApi = {
     return response.data;
   },
 
+  /** Changement de mot de passe par l'utilisateur connecté. */
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<string> => {
+    const response = await api.post<string>("/auth/change-password", data);
+    return response.data;
+  },
+
   // ─── 2FA ────────────────────────────────────────────────────
 
   enable2FA: async (): Promise<Enable2FAResponse> => {

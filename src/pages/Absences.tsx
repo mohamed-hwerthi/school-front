@@ -220,7 +220,7 @@ export default function AbsencesPage() {
             Consultez et gerez les absences et retards des eleves
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ExportButton
             type="absences"
             label="Exporter"
@@ -274,8 +274,8 @@ export default function AbsencesPage() {
         className="rounded-xl border border-border/50 bg-card p-4 shadow-sm"
       >
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
+            <div className="min-w-0 flex-1">
               <Select
                 value={selectedClasseId || "all"}
                 onValueChange={(v) => {
@@ -304,19 +304,19 @@ export default function AbsencesPage() {
                 setSelectedDate(e.target.value);
                 setCurrentPage(0);
               }}
-              className="w-[180px]"
+              className="w-full sm:w-[180px]"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             <SearchInput
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(0); }}
               onSearch={() => setCurrentPage(0)}
               placeholder="Rechercher un eleve..."
-              className="flex-1 min-w-[200px]"
+              className="w-full sm:flex-1 sm:min-w-[200px]"
             />
             <Select value={filterType} onValueChange={(v) => { setFilterType(v); setCurrentPage(0); }}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-full min-w-0 flex-1 sm:w-[130px] sm:flex-none">
                 <Filter className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
@@ -327,7 +327,7 @@ export default function AbsencesPage() {
               </SelectContent>
             </Select>
             <Select value={filterJustifie} onValueChange={(v) => { setFilterJustifie(v); setCurrentPage(0); }}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="w-full min-w-0 flex-1 sm:w-[130px] sm:flex-none">
                 <SelectValue placeholder="Justifie" />
               </SelectTrigger>
               <SelectContent>

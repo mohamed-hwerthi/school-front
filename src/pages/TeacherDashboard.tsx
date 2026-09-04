@@ -13,7 +13,7 @@ import {
 import { useCurrentUser } from "@/hooks/useRbac";
 import { useClasses } from "@/hooks/useClasses";
 import { useDevoirs } from "@/hooks/useDevoirs";
-import { useEmploiMine } from "@/hooks/useEmploiDuTemps";
+import { useCreneaux, useEmploiMine } from "@/hooks/useEmploiDuTemps";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -60,15 +60,31 @@ function KpiCard({ label, value, icon: Icon, to, hint, loading }: KpiCardProps) 
 
 export default function TeacherDashboard() {
   const { user, scopedClasseIds } = useCurrentUser();
-  const { classes, isLoading: loadingClasses } = useClasses();
+  const { data: classes = [], isLoading: loadingClasses } = useClasses();
   const { data: devoirs = [], isLoading: loadingDevoirs } = useDevoirs();
   const { data: edtEntries = [], isLoading: loadingEdt } = useEmploiMine();
+  const { data: creneaux = [] } = useCreneaux();
 
-  // EDT entries scheduled for today (relies on EDT items having a `jour` field 1-7)
+  // Les entrées d'EDT ne portent que des ids : on résout les libellés ici.
+  const classeNameById = useMemo(
+    () => new Map(classes.map((c) => [c.id, c.fullName ?? c.letter])),
+    [classes]
+  );
+  const creneauById = useMemo(
+    () => new Map(creneaux.map((c) => [c.id, c])),
+    [creneaux]
+  );
+
   const todayCourses = useMemo(() => {
     const dow = new Date().getDay() || 7; // Sunday=7
-    return edtEntries.filter((e) => Number(e.jour) === dow);
-  }, [edtEntries]);
+    return edtEntries
+      .filter((e) => Number(e.jourSemaine) === dow)
+      .sort((a, b) =>
+        (creneauById.get(a.creneauId)?.heureDebut ?? "").localeCompare(
+          creneauById.get(b.creneauId)?.heureDebut ?? ""
+        )
+      );
+  }, [edtEntries, creneauById]);
 
   const openDevoirs = useMemo(
     () => devoirs.filter((d) => d.statut !== "FERME").length,
@@ -163,26 +179,27 @@ export default function TeacherDashboard() {
             </p>
           ) : (
             <ul className="space-y-2">
-              {todayCourses.slice(0, 6).map((c, i) => (
-                <li
-                  key={c.id ?? i}
-                  className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/10 p-3 text-sm"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {c.moduleName ?? c.matiere ?? "Cours"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.classeName ?? c.classe ?? ""}
-                      {c.salle ? ` · Salle ${c.salle}` : ""}
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {c.heureDebut ?? ""}
-                    {c.heureFin ? ` – ${c.heureFin}` : ""}
-                  </span>
-                </li>
-              ))}
+              {todayCourses.slice(0, 6).map((c, i) => {
+                const creneau = creneauById.get(c.creneauId);
+                return (
+                  <li
+                    key={c.id ?? i}
+                    className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/10 p-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-medium">{c.moduleName ?? "Cours"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {classeNameById.get(c.classeId) ?? ""}
+                        {c.salle ? ` · Salle ${c.salle}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {creneau?.heureDebut ?? ""}
+                      {creneau?.heureFin ? ` – ${creneau.heureFin}` : ""}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </motion.div>
@@ -264,7 +281,7 @@ export default function TeacherDashboard() {
                 <div>
                   <p className="font-medium">{d.titre}</p>
                   <p className="text-xs text-muted-foreground">
-                    {d.classeName ?? ""} · échéance{" "}
+                    {(d.classeId && classeNameById.get(d.classeId)) ?? ""} · échéance{" "}
                     {d.dateLimite
                       ? new Date(d.dateLimite).toLocaleDateString("fr-FR")
                       : "—"}

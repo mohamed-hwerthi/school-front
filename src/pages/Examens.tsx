@@ -86,12 +86,12 @@ function SelectionPrompt() {
       <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
         Sélectionnez le niveau et la classe pour afficher et gérer les examens.
       </p>
-      <div className="mt-6 flex justify-center gap-3">
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Select
           value={niveauId ? String(niveauId) : ""}
           onValueChange={(v) => setNiveauId(v)}
         >
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-full max-w-xs sm:w-[220px]">
             <GraduationCap className="h-4 w-4 me-2 text-muted-foreground" />
             <SelectValue placeholder="Niveau..." />
           </SelectTrigger>
@@ -109,7 +109,7 @@ function SelectionPrompt() {
           onValueChange={(v) => setClasseId(v)}
           disabled={!niveauId}
         >
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-full max-w-xs sm:w-[220px]">
             <GraduationCap className="h-4 w-4 me-2 text-muted-foreground" />
             <SelectValue placeholder="Classe..." />
           </SelectTrigger>

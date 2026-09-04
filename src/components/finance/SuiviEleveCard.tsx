@@ -31,7 +31,13 @@ export function SuiviEleveCard({ student, onAppel, onSMS, onEmail }: SuiviEleveC
     const tfMap: Record<number, string> = {};
     typesFrais.forEach((tf) => { tfMap[tf.id] = tf.nom; });
     generateFacturePDF(
-      { nom: student.nom, prenom: student.prenom, classe: student.classe },
+      {
+        nom: student.nom,
+        prenom: student.prenom,
+        classe: student.classe,
+        parentName: `${student.prenomParent ?? ""} ${student.nomParent ?? ""}`.trim(),
+        parentTelephone: student.telephoneParent ?? "",
+      },
       paiements,
       tfMap,
       "2025-2026",

@@ -10,6 +10,8 @@ export interface TypeFraisDTO {
   frequence: "MENSUEL" | "TRIMESTRIEL" | "ANNUEL" | "UNIQUE";
   description: string | null;
   actif: boolean;
+  /** Niveaux concernés. Tableau vide = tous les niveaux. */
+  niveauIds: string[];
   createdAt: string;
 }
 
@@ -19,6 +21,7 @@ export interface TypeFraisRequest {
   frequence: "MENSUEL" | "TRIMESTRIEL" | "ANNUEL" | "UNIQUE";
   description?: string;
   actif?: boolean;
+  niveauIds?: string[];
 }
 
 export interface PaiementDTO {
@@ -152,7 +155,6 @@ export const paiementsApi = {
     return res.data;
   },
 
-  delete: (id: string) => api.delete(`/paiements/${id}`),
 
   getDashboard: async (anneeScolaire: string): Promise<FinanceDashboardDTO> => {
     const res = await api.get<FinanceDashboardDTO>(

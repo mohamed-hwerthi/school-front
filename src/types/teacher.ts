@@ -1,5 +1,7 @@
 export type Teacher = {
   id: string;
+  /** Identifiant de connexion de l'enseignant (ENS-2026-00042). */
+  matricule: string;
   nom: string;
   prenom: string;
   sexe: "M" | "F";

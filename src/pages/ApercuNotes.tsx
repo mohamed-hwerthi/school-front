@@ -42,7 +42,7 @@ function SelectionPrompt() {
             value={niveauId ? String(niveauId) : ""}
             onValueChange={(v) => setNiveauId(v)}
           >
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-full max-w-xs sm:w-[220px]">
               <GraduationCap className="h-4 w-4 me-2 text-muted-foreground" />
               <SelectValue placeholder="Niveau..." />
             </SelectTrigger>
@@ -60,7 +60,7 @@ function SelectionPrompt() {
             onValueChange={(v) => setClasseId(v)}
             disabled={!niveauId}
           >
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-full max-w-xs sm:w-[220px]">
               <GraduationCap className="h-4 w-4 me-2 text-muted-foreground" />
               <SelectValue placeholder="Classe..." />
             </SelectTrigger>

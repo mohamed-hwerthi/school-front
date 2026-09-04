@@ -6,6 +6,7 @@ const BASE = "/teachers";
 // ─── Backend DTO types ──────────────────────────────────────
 interface TeacherBackend {
   id: string;
+  matricule: string | null;
   firstName: string;
   lastName: string;
   email: string | null;
@@ -21,6 +22,7 @@ interface TeacherBackend {
 function fromBackend(dto: TeacherBackend): Teacher {
   return {
     id: dto.id,
+    matricule: dto.matricule ?? "",
     prenom: dto.firstName,
     nom: dto.lastName,
     email: dto.email ?? "",
@@ -34,7 +36,7 @@ function fromBackend(dto: TeacherBackend): Teacher {
 }
 
 function toBackend(
-  data: Omit<Teacher, "id" | "dateEmbauche">
+  data: Omit<Teacher, "id" | "dateEmbauche" | "matricule">
 ): Record<string, unknown> {
   return {
     firstName: data.prenom,
@@ -69,7 +71,7 @@ export const teachersApi = {
   getById: (id: string) =>
     api.get<TeacherBackend>(`${BASE}/${id}`).then((res) => fromBackend(res.data)),
 
-  create: (data: Omit<Teacher, "id" | "dateEmbauche">) =>
+  create: (data: Omit<Teacher, "id" | "dateEmbauche" | "matricule">) =>
     api.post<TeacherBackend>(BASE, toBackend(data)).then((res) => fromBackend(res.data)),
 
   update: (id: string, data: Partial<Teacher>) =>
@@ -77,7 +79,7 @@ export const teachersApi = {
 
   delete: (id: string) => api.delete(`${BASE}/${id}`),
 
-  importBulk: (teachers: Omit<Teacher, "id" | "dateEmbauche">[]) =>
+  importBulk: (teachers: Omit<Teacher, "id" | "dateEmbauche" | "matricule">[]) =>
     api
       .post<TeacherBackend[]>(`${BASE}/import`, teachers.map(toBackend))
       .then((res) => res.data.map(fromBackend)),

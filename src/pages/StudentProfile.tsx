@@ -20,11 +20,25 @@ import {
   ShieldCheck,
   Globe,
   PhoneCall,
+  Ban,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useStudent } from "@/hooks/useStudents";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { PermissionGate } from "@/components/auth/Gates";
+import { PortalAccountCard } from "@/components/students/PortalAccountCard";
+import { useStudent, useSetStudentBlocked, useDeleteStudent } from "@/hooks/useStudents";
 import { useSchool } from "@/hooks/useSchool";
 import { StudentProfileSkeleton } from "@/components/skeletons/StudentProfileSkeleton";
 import {
@@ -63,6 +77,39 @@ export default function StudentProfile() {
   const [smsOpen, setSmsOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [appelOpen, setAppelOpen] = useState(false);
+
+  // Block / delete state
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const blockMutation = useSetStudentBlocked();
+  const deleteMutation = useDeleteStudent();
+
+  const handleToggleBlock = () => {
+    if (!student) return;
+    const blocked = !student.estBloque;
+    blockMutation.mutate(
+      { id: student.id, blocked },
+      {
+        onSuccess: () => {
+          toast.success(blocked ? t("students.studentBlocked") : t("students.studentUnblocked"));
+          setBlockOpen(false);
+        },
+        onError: (e: Error) => toast.error(e.message || t("common.error")),
+      }
+    );
+  };
+
+  const handleDelete = () => {
+    if (!student) return;
+    deleteMutation.mutate(student.id, {
+      onSuccess: () => {
+        toast.success(t("students.studentDeleted"));
+        setDeleteOpen(false);
+        navigate("/dashboard/eleves");
+      },
+      onError: (e: Error) => toast.error(e.message || t("common.error")),
+    });
+  };
 
   if (isLoading) return <StudentProfileSkeleton />;
 
@@ -142,7 +189,7 @@ export default function StudentProfile() {
               {student.estBloque && (
                 <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-700">
                   <ShieldAlert className="h-3 w-3" />
-                  Bloqué
+                  {t("students.blocked")}
                 </span>
               )}
             </div>
@@ -185,6 +232,28 @@ export default function StudentProfile() {
             <FileText className="h-4 w-4 shrink-0" />
             Attestation d'inscription
           </Button>
+          <PermissionGate perms={["WRITE_STUDENTS"]}>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`gap-1.5 ${student.estBloque ? "text-emerald-700 hover:text-emerald-700" : "text-red-600 hover:text-red-600"}`}
+              onClick={() => setBlockOpen(true)}
+            >
+              {student.estBloque ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+              {student.estBloque ? t("students.unblock") : t("students.block")}
+            </Button>
+          </PermissionGate>
+          <PermissionGate perms={["DELETE_STUDENTS"]}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-red-600 hover:text-red-600"
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t("common.delete")}
+            </Button>
+          </PermissionGate>
           <Button
             size="sm"
             className="gap-1.5 bg-gradient-primary shadow-btn"
@@ -195,6 +264,63 @@ export default function StudentProfile() {
           </Button>
         </div>
       </motion.div>
+
+      {/* Block / Unblock confirmation */}
+      <Dialog open={blockOpen} onOpenChange={setBlockOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{student.estBloque ? t("students.unblock") : t("students.block")}</DialogTitle>
+            <DialogDescription>
+              {student.estBloque ? t("students.unblockConfirmMsg") : t("students.blockConfirmMsg")}{" "}
+              <span className="font-semibold text-foreground">
+                {student.prenom} {student.nom}
+              </span>
+              {" ? "}
+              {student.estBloque ? t("students.unblockHint") : t("students.blockHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild>
+              <Button variant="outline">{t("common.cancel")}</Button>
+            </DialogClose>
+            <Button
+              variant={student.estBloque ? "default" : "destructive"}
+              onClick={handleToggleBlock}
+              disabled={blockMutation.isPending}
+            >
+              {blockMutation.isPending
+                ? t("common.saving")
+                : student.estBloque
+                  ? t("students.unblock")
+                  : t("students.block")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
+            <DialogDescription>
+              {t("common.deleteConfirmMsg")}{" "}
+              <span className="font-semibold text-foreground">
+                {student.prenom} {student.nom}
+              </span>{" "}
+              ? {t("common.irreversible")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild>
+              <Button variant="outline">{t("common.cancel")}</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -392,6 +518,17 @@ export default function StudentProfile() {
           <p className="text-sm text-muted-foreground leading-relaxed">{student.notes}</p>
         </motion.div>
       )}
+
+      {/* Gestion du compte portail (identifiant = matricule de l'élève) */}
+      <PermissionGate perms={["MANAGE_USERS"]}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.35 }}
+        >
+          <PortalAccountCard student={student} schoolName={school?.nom} />
+        </motion.div>
+      </PermissionGate>
 
       {/* ── Contact dialogs ─────────────────────────────── */}
       <CommunicationDialog

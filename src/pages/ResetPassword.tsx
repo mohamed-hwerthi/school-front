@@ -124,7 +124,7 @@ const ResetPassword = () => {
               <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-4 text-sm text-green-700 dark:text-green-400">
                 <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <span>
-                  Mot de passe r&eacute;initialis&eacute; avec succ&egrave;s. Redirection vers la connexion...
+                  Mot de passe réinitialisé avec succès. Redirection vers la connexion...
                 </span>
               </div>
               <Link
@@ -132,7 +132,7 @@ const ResetPassword = () => {
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/50 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Retour &agrave; la connexion
+                Retour à la connexion
               </Link>
             </motion.div>
           ) : (
@@ -155,7 +155,7 @@ const ResetPassword = () => {
                   className="mb-4 flex w-full max-w-[280px] items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Token de r&eacute;initialisation manquant. V&eacute;rifiez votre lien.
+                  Token de réinitialisation manquant. Vérifiez votre lien.
                 </motion.div>
               )}
 
@@ -211,7 +211,7 @@ const ResetPassword = () => {
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        R&eacute;initialisation...
+                        Réinitialisation...
                       </>
                     ) : (
                       "R\u00e9initialiser le mot de passe"
@@ -225,7 +225,7 @@ const ResetPassword = () => {
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
-                    Retour &agrave; la connexion
+                    Retour à la connexion
                   </Link>
                 </motion.div>
               </form>
@@ -233,7 +233,7 @@ const ResetPassword = () => {
           )}
 
           <motion.p variants={item} className="mt-8 text-[10px] text-muted-foreground">
-            &copy; 2026 EcoleNet — Tous droits r&eacute;serv&eacute;s
+            &copy; 2026 EcoleNet — Tous droits réservés
           </motion.p>
         </motion.div>
       </motion.div>

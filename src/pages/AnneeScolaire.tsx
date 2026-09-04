@@ -682,7 +682,7 @@ export default function AnneeScolairePage() {
                     header: "Parcours",
                     render: (p) => (
                       <span className="text-sm">
-                        {p.ancienneClasse || p.ancienNiveau} &rarr; {p.nouvelleClasse || p.nouveauNiveau}
+                        {p.ancienneClasse || p.ancienNiveau} → {p.nouvelleClasse || p.nouveauNiveau}
                       </span>
                     ),
                   },

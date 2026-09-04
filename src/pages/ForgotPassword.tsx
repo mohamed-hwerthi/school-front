@@ -84,10 +84,10 @@ const ForgotPassword = () => {
 
           <motion.div variants={item} className="mb-8 text-center">
             <h2 className="font-heading text-2xl font-bold text-foreground">
-              Mot de passe oubli&eacute; ?
+              Mot de passe oublié ?
             </h2>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Entrez votre adresse e-mail pour recevoir un lien de r&eacute;initialisation
+              Entrez votre adresse e-mail pour recevoir un lien de réinitialisation
             </p>
           </motion.div>
 
@@ -100,7 +100,7 @@ const ForgotPassword = () => {
               <div className="flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-4 text-sm text-green-700 dark:text-green-400">
                 <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <span>
-                  Si un compte existe avec cet email, un lien de r&eacute;initialisation a &eacute;t&eacute; envoy&eacute;.
+                  Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.
                 </span>
               </div>
               <Link
@@ -177,7 +177,7 @@ const ForgotPassword = () => {
           )}
 
           <motion.p variants={item} className="mt-8 text-[10px] text-muted-foreground">
-            &copy; 2026 EcoleNet — Tous droits r&eacute;serv&eacute;s
+            &copy; 2026 EcoleNet — Tous droits réservés
           </motion.p>
         </motion.div>
       </motion.div>

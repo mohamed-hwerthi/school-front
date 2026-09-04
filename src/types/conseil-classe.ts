@@ -26,3 +26,24 @@ export interface ConseilClasse {
   anneeScolaire: string | null;
   propositions: PropositionPassage[];
 }
+
+/** محضر الجلسة السنوي figé : le document rendu et son contexte d'édition. */
+export interface PvAnnuel {
+  id: string;
+  classeId: string;
+  anneeScolaire: string;
+  classeNom: string | null;
+  effectif: number | null;
+  /** Document HTML autonome, prêt à imprimer. */
+  contenu: string;
+  generePar: string | null;
+  createdAt: string;
+}
+
+export interface PvAnnuelRequest {
+  anneeScolaire: string;
+  classeNom: string;
+  effectif: number;
+  contenu: string;
+  generePar?: string;
+}

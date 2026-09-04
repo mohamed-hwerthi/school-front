@@ -134,7 +134,7 @@ export default function ComptableDashboard() {
           value={fmt(stats?.totalPending)}
           icon={AlertCircle}
           tone="warning"
-          to="/dashboard/finance/relances"
+          to="/dashboard/finance"
           loading={loadingStats}
           hint="Sommes restant à encaisser"
         />
@@ -287,13 +287,6 @@ export default function ComptableDashboard() {
         >
           <TrendingDown className="h-5 w-5 text-primary mx-auto mb-1.5" />
           <p className="text-xs font-medium">Dépenses</p>
-        </Link>
-        <Link
-          to="/dashboard/finance/relances"
-          className="rounded-xl border border-border/50 bg-card p-4 text-center hover:bg-muted/40 transition-colors"
-        >
-          <AlertCircle className="h-5 w-5 text-primary mx-auto mb-1.5" />
-          <p className="text-xs font-medium">Relances</p>
         </Link>
         <Link
           to="/dashboard/finance/rapports"

@@ -374,7 +374,7 @@ export default function NotesTab() {
               value={niveauId || ""}
               onValueChange={(v) => setNiveauId(v)}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <GraduationCap className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Niveau" />
               </SelectTrigger>
@@ -392,7 +392,7 @@ export default function NotesTab() {
               onValueChange={(v) => setClasseId(v)}
               disabled={!niveauId}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Classe" />
               </SelectTrigger>
               <SelectContent>
@@ -409,7 +409,7 @@ export default function NotesTab() {
               onValueChange={(v) => setModuleId(v)}
               disabled={!niveauId}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Matière" />
               </SelectTrigger>
               <SelectContent>
@@ -426,7 +426,7 @@ export default function NotesTab() {
               onValueChange={(v) => setExamenId(v)}
               disabled={!classeId || !moduleId}
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Examen" />
               </SelectTrigger>
               <SelectContent>
@@ -472,7 +472,7 @@ export default function NotesTab() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 {filledCount}/{localNotes.length} notes saisies
@@ -504,7 +504,7 @@ export default function NotesTab() {
               )}
               <Button
                 size="sm"
-                className="gap-1.5"
+                className="w-full gap-1.5 sm:w-auto"
                 onClick={handleSave}
                 disabled={upsertNotes.isPending || filledCount === 0}
               >
@@ -520,16 +520,16 @@ export default function NotesTab() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground w-8">
+                    <th className="hidden py-3 px-2 text-start text-xs font-semibold text-muted-foreground sm:table-cell sm:w-8 sm:px-4">
                       #
                     </th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground">
+                    <th className="py-3 px-2 text-start text-xs font-semibold text-muted-foreground sm:px-4">
                       Élève
                     </th>
-                    <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground w-32">
+                    <th className="w-20 py-3 px-2 text-center text-xs font-semibold text-muted-foreground sm:w-32 sm:px-4">
                       Note /20
                     </th>
-                    <th className="py-3 px-4 text-start text-xs font-semibold text-muted-foreground">
+                    <th className="py-3 px-2 text-start text-xs font-semibold text-muted-foreground sm:px-4">
                       Observation
                     </th>
                   </tr>
@@ -557,18 +557,18 @@ export default function NotesTab() {
                         key={note.studentId}
                         className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
                       >
-                        <td className="py-2 px-4 text-muted-foreground text-xs">
+                        <td className="hidden py-2 px-2 text-muted-foreground text-xs sm:table-cell sm:px-4">
                           {idx + 1}
                         </td>
-                        <td className="py-2 px-4 font-medium text-foreground">
+                        <td className="py-2 px-2 font-medium text-foreground sm:px-4">
                           {note.studentName}
                         </td>
-                        <td className="py-2 px-4">
+                        <td className="py-2 px-2 sm:px-4">
                           {note.statut === "ABSENT" ? (
                             <button
                               type="button"
                               onClick={() => handleStatutChange(note.studentId, "PRESENT")}
-                              className="w-24 mx-auto block rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+                              className="mx-auto block w-16 rounded-md border border-amber-300 sm:w-24 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
                               title="Cliquer pour rétablir la saisie"
                             >
                               ABS
@@ -592,12 +592,12 @@ export default function NotesTab() {
                                 )
                               }
                               aria-invalid={!isValidValeur(note.valeur)}
-                              className={`w-24 mx-auto text-center ${!isValidValeur(note.valeur) ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                              className={`mx-auto w-16 text-center sm:w-24 ${!isValidValeur(note.valeur) ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                               placeholder="—"
                             />
                           )}
                         </td>
-                        <td className="py-2 px-4">
+                        <td className="py-2 px-2 sm:px-4">
                           <Input
                             value={note.observation}
                             data-row={idx}
@@ -612,7 +612,7 @@ export default function NotesTab() {
                               )
                             }
                             placeholder="Observation (optionnel)"
-                            className="text-sm"
+                            className="w-full min-w-0 text-sm"
                           />
                         </td>
                       </tr>

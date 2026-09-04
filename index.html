@@ -2,21 +2,30 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover : le contenu passe sous l'encoche iPhone, les
+         retraits sont repris en CSS via env(safe-area-inset-*). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#7c3aed" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <title>SchoolSys - Gestion Scolaire</title>
-    <meta name="description" content="Système de gestion scolaire multi-tenant">
+
+    <!-- iOS ignore le manifest : mode plein ecran et icone se declarent ici. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="EcoleNet" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>EcoleNet - Gestion Scolaire</title>
+    <meta name="description" content="Le quotidien de l'école sur mobile : appel, notes, devoirs, emploi du temps, bulletins et factures.">
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="SchoolSys - Gestion Scolaire">
-    <meta property="og:description" content="Système de gestion scolaire multi-tenant">
+    <meta property="og:site_name" content="EcoleNet" />
+    <meta property="og:title" content="EcoleNet - Gestion Scolaire">
+    <meta property="og:description" content="Le quotidien de l'école sur mobile : appel, notes, devoirs, emploi du temps, bulletins et factures.">
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SchoolSys - Gestion Scolaire">
-    <meta name="twitter:description" content="Système de gestion scolaire multi-tenant">
+    <meta name="twitter:title" content="EcoleNet - Gestion Scolaire">
+    <meta name="twitter:description" content="Le quotidien de l'école sur mobile : appel, notes, devoirs, emploi du temps, bulletins et factures.">
   </head>
 
   <body>

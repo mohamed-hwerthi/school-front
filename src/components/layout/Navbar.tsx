@@ -16,6 +16,7 @@ import {
   Maximize,
   Minimize,
   Settings,
+  KeyRound,
   ChevronRight,
   Globe,
   School,
@@ -116,6 +117,11 @@ function Breadcrumb() {
 export function Navbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  // Sur mobile, l'enseignant navigue par la barre d'onglets du bas : le tiroir
+  // ferait double emploi (et expose une arborescence d'admin). Il reste
+  // disponible au-dela de md, ou il n'y a pas de barre d'onglets.
+  const teacherOnMobile = user?.role === "ENSEIGNANT";
   const { school } = useSchool();
   const { t } = useLanguage();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -145,8 +151,11 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/40 backdrop-blur-xl bg-background/60 px-4">
-      <SidebarTrigger className="-ms-1" />
-      <Separator orientation="vertical" className="h-5" />
+      <SidebarTrigger className={teacherOnMobile ? "-ms-1 hidden md:flex" : "-ms-1"} />
+      <Separator
+        orientation="vertical"
+        className={teacherOnMobile ? "hidden h-5 md:block" : "h-5"}
+      />
 
       <Breadcrumb />
 
@@ -228,13 +237,22 @@ export function Navbar() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium">{displayName}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-xs text-muted-foreground">
+                  {user?.email ?? user?.username}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="me-2 h-4 w-4" />
               {t("common.profile")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/change-password")}>
+              <KeyRound className="me-2 h-4 w-4" />
+              {t("auth.changePassword")}
+              {user?.mustChangePassword && (
+                <span className="ms-auto h-1.5 w-1.5 rounded-full bg-amber-500" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="me-2 h-4 w-4" />

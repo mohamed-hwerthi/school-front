@@ -64,6 +64,18 @@ export const studentsApi = {
     return fromApi(res.data);
   },
 
+  /** Bloque / débloque un élève (bloqué => statut "Inactif"). */
+  setBlocked: async (id: string, blocked: boolean): Promise<Student> => {
+    const res = await api.patch<StudentApiDTO>(`${BASE}/${id}/block`, { blocked });
+    return fromApi(res.data);
+  },
+
+  /** Change le statut seul (Actif / Inactif / En attente). */
+  setStatus: async (id: string, statut: Student["statut"]): Promise<Student> => {
+    const res = await api.patch<StudentApiDTO>(`${BASE}/${id}/status`, { status: statut });
+    return fromApi(res.data);
+  },
+
   delete: (id: string) => api.delete(`${BASE}/${id}`),
 
   importBulk: async (

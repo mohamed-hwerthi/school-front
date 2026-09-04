@@ -16,6 +16,7 @@ interface AuthContextType {
   verify2FA: (userId: string, code: string) => Promise<void>;
   cancelTwoFactor: () => void;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -52,6 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearAuth();
       })
       .finally(() => setIsLoading(false));
+  }, []);
+
+  /** Recharge le profil depuis /auth/me — après un changement de mot de passe par ex. */
+  const refreshUser = useCallback(async () => {
+    const userData = await authApi.getMe();
+    setUser(userData);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
   }, []);
 
   const clearAuth = useCallback(() => {
@@ -117,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verify2FA,
         cancelTwoFactor,
         logout,
+        refreshUser,
       }}
     >
       {children}

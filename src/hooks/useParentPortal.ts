@@ -1,11 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   parentPortalApi,
   type ParentNote,
   type ParentAbsence,
   type ParentBulletin,
   type ParentEmploiDuTemps,
+  type ChildDevoir,
+  type SubmitDevoirPayload,
+  type ChildPaiements,
 } from "@/api/parent-portal.api";
+import { notify } from "@/lib/toast";
+import { useLanguage } from "@/hooks/useLanguage";
 import type { Child, Annonce } from "@/types/notification";
 
 const PARENT_KEY = "parent-portal";
@@ -40,11 +45,48 @@ export function useChildAbsences(studentId: string) {
   });
 }
 
-export function useChildBulletin(studentId: string, classeId: string, trimestre = 1) {
+export function useChildBulletin(studentId: string, trimestre = 1) {
   return useQuery<ParentBulletin>({
-    queryKey: [PARENT_KEY, "bulletin", studentId, classeId, trimestre],
-    queryFn: () => parentPortalApi.getChildBulletin(studentId, classeId, trimestre),
-    enabled: !!studentId && !!classeId,
+    queryKey: [PARENT_KEY, "bulletin", studentId, trimestre],
+    queryFn: () => parentPortalApi.getChildBulletin(studentId, trimestre),
+    enabled: !!studentId,
+    // Un trimestre sans notes renvoie 404 : inutile de réessayer.
+    retry: false,
+  });
+}
+
+export function useChildDevoirs(studentId: string) {
+  return useQuery<ChildDevoir[]>({
+    queryKey: [PARENT_KEY, "devoirs", studentId],
+    queryFn: () => parentPortalApi.getChildDevoirs(studentId),
+    enabled: !!studentId,
+  });
+}
+
+export function useSubmitChildDevoir(studentId: string) {
+  const queryClient = useQueryClient();
+  const { t } = useLanguage();
+  return useMutation({
+    mutationFn: ({
+      devoirId,
+      payload,
+    }: {
+      devoirId: string;
+      payload: SubmitDevoirPayload;
+    }) => parentPortalApi.submitChildDevoir(studentId, devoirId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [PARENT_KEY, "devoirs", studentId] });
+      notify.success(t("parentPortal.homework.submitted"));
+    },
+    onError: (err: Error) => notify.error(err.message),
+  });
+}
+
+export function useChildPaiements(studentId: string) {
+  return useQuery<ChildPaiements>({
+    queryKey: [PARENT_KEY, "paiements", studentId],
+    queryFn: () => parentPortalApi.getChildPaiements(studentId),
+    enabled: !!studentId,
   });
 }
 

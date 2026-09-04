@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { paiementSchema, type PaiementFormValues } from "@/lib/finance-schema";
 import { useAllStudents } from "@/hooks/useStudents";
 import { useTypesFrais } from "@/hooks/useFinance";
-import { MODES_PAIEMENT, STATUTS_PAIEMENT, MOIS_SCOLAIRES, MOIS_LABELS } from "@/types/finance";
+import { MODES_PAIEMENT, MOIS_SCOLAIRES, MOIS_LABELS } from "@/types/finance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -62,7 +62,22 @@ export function PaiementForm({
   const typeFraisId = watch("typeFraisId");
   const mois = watch("mois");
   const modePaiement = watch("modePaiement");
-  const statut = watch("statut");
+  const montantDu = watch("montantDu");
+  const montantPaye = watch("montantPaye");
+
+  // Un mois n'a de sens que pour un frais MENSUEL : des frais d'inscription
+  // se règlent une fois pour l'année.
+  const typeFraisSelectionne = typesFrais.find((t) => String(t.id) === typeFraisId);
+  const exigeMois = !typeFraisSelectionne || typeFraisSelectionne.frequence === "MENSUEL";
+
+  // Le statut n'est pas un choix : le serveur le recalcule depuis les montants
+  // (computeStatut). On se contente de montrer ce qui sera enregistré.
+  const statutCalcule =
+    Number(montantPaye) <= 0
+      ? "En attente"
+      : Number(montantPaye) >= Number(montantDu)
+        ? "Payé"
+        : "Partiel";
 
   // ── Cascade Niveau → Classe → Élève ──────────────────────────────
   const [selectedNiveau, setSelectedNiveau] = useState<string>("");
@@ -114,6 +129,9 @@ export function PaiementForm({
     const tf = typesFrais.find((t) => String(t.id) === value);
     if (tf) {
       setValue("montantDu", tf.montantMensuel);
+      setValue("frequence", tf.frequence, { shouldValidate: true });
+      // Un frais non mensuel ne porte pas de mois : on efface l'ancienne valeur.
+      setValue("mois", tf.frequence === "MENSUEL" ? mois : "", { shouldValidate: true });
     }
   };
 
@@ -206,27 +224,38 @@ export function PaiementForm({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Mois *</Label>
-            <Select
-              value={mois}
-              onValueChange={(v) => setValue("mois", v, { shouldValidate: true })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choisir le mois" />
-              </SelectTrigger>
-              <SelectContent>
-                {MOIS_SCOLAIRES.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {MOIS_LABELS[m]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.mois && (
-              <p className="text-xs text-destructive">{errors.mois.message}</p>
-            )}
-          </div>
+          {exigeMois ? (
+            <div className="space-y-1.5">
+              <Label>Mois *</Label>
+              <Select
+                value={mois}
+                onValueChange={(v) => setValue("mois", v, { shouldValidate: true })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le mois" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOIS_SCOLAIRES.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {MOIS_LABELS[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.mois && (
+                <p className="text-xs text-destructive">{errors.mois.message}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label>Mois</Label>
+              <Input value="Sans objet" readOnly disabled className="text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">
+                Un frais {typeFraisSelectionne?.frequence === "ANNUEL" ? "annuel" : "ponctuel"} se
+                règle une fois pour l'année scolaire.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="montantDu">Montant dû ({CURRENCY})</Label>
@@ -285,32 +314,28 @@ export function PaiementForm({
 
           <div className="space-y-1.5">
             <Label>Statut</Label>
-            <Select
-              value={statut}
-              onValueChange={(v) =>
-                setValue("statut", v as PaiementFormValues["statut"], { shouldValidate: true })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUTS_PAIEMENT.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input value={statutCalcule} readOnly disabled className="text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              Déduit des montants : payé intégralement, partiel, ou en attente.
+            </p>
           </div>
 
+          {/* La référence est produite par le serveur à la création
+              (PAY-2025-09-001) : on l'affiche en lecture seule, jamais en saisie. */}
           <div className="space-y-1.5">
             <Label htmlFor="reference">Référence</Label>
             <Input
               id="reference"
-              {...register("reference")}
-              placeholder="PAY-XXXXXX"
+              value={defaultValues?.reference || "Générée automatiquement"}
+              readOnly
+              disabled
+              className="text-muted-foreground"
             />
+            {!defaultValues?.reference && (
+              <p className="text-xs text-muted-foreground">
+                Attribuée à l'enregistrement, au format PAY-2025-09-001.
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5 sm:col-span-2">

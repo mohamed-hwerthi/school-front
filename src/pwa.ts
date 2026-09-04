@@ -1,26 +1,46 @@
 /**
- * Register the service worker for PWA support.
- * Called once from main.tsx on application load (production only).
+ * Enregistrement du service worker (PWA).
+ * Appele une fois depuis main.tsx, en production uniquement.
  */
 export function registerServiceWorker(): void {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered:', registration.scope);
-        })
-        .catch((error) => {
-          console.warn('SW registration failed:', error);
+  if (!('serviceWorker' in navigator)) return;
+
+  // Quand un nouveau SW prend la main, les assets deja charges par la page
+  // peuvent ne plus correspondre au bundle servi. On recharge une seule fois —
+  // le garde evite la boucle de rechargement si l'activation se repete.
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => {
+        // Applique la mise a jour des qu'elle est prete, sans attendre que
+        // tous les onglets soient fermes.
+        registration.addEventListener('updatefound', () => {
+          const installing = registration.installing;
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              installing.postMessage('SKIP_WAITING');
+            }
+          });
         });
-    });
-  }
+      })
+      .catch((error) => {
+        console.warn('SW registration failed:', error);
+      });
+  });
 }
 
 /**
- * Force-cleanup any previously registered service worker and its caches.
- * Runs immediately in dev so a stale SW from a prior session can no longer
- * intercept fetches and serve old bundles.
+ * Desinscrit tout service worker et vide les caches.
+ * Appele en dev pour qu'un SW d'une session precedente ne serve pas un
+ * ancien bundle a la place du serveur Vite.
  */
 export function unregisterServiceWorkerAndClearCaches(): void {
   if (typeof navigator === 'undefined') return;

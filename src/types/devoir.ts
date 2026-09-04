@@ -1,6 +1,5 @@
 export type TypeDevoir = 'DEVOIR' | 'EXERCICE' | 'PROJET' | 'EXPOSE';
 export type StatutDevoir = 'BROUILLON' | 'PUBLIE' | 'FERME';
-export type TypeRessource = 'DOCUMENT' | 'VIDEO' | 'LIEN' | 'IMAGE' | 'AUDIO';
 
 export interface Devoir {
   id: string;
@@ -41,6 +40,7 @@ export interface Soumission {
   devoirId: string;
   devoirTitre: string;
   eleveId: string;
+  eleveNom: string | null;
   contenu: string | null;
   fichierUrl: string | null;
   dateSoumission: string;
@@ -64,31 +64,7 @@ export interface CorrectionRequest {
   commentaire?: string;
 }
 
-export interface RessourcePedagogique {
-  id: string;
-  titre: string;
-  description: string | null;
-  moduleId: string | null;
-  type: TypeRessource;
-  fichierUrl: string | null;
-  lienExterne: string | null;
-  enseignantId: string | null;
-  tailleFichier: number | null;
-  anneeScolaire: string;
-  createdAt: string;
-}
 
-export interface CreateRessourceRequest {
-  titre: string;
-  description?: string;
-  moduleId?: string;
-  type?: TypeRessource;
-  fichierUrl?: string;
-  lienExterne?: string;
-  enseignantId?: string;
-  tailleFichier?: number;
-  anneeScolaire?: string;
-}
 
 export interface DevoirStats {
   totalDevoirs: number;

@@ -42,7 +42,9 @@ export function typeFraisFromApi(dto: TypeFraisDTO): TypeFrais {
     id: dto.id,
     nom: dto.nom,
     montantMensuel: dto.montant,
+    frequence: dto.frequence,
     description: dto.description ?? "",
+    niveauIds: dto.niveauIds ?? [],
     actif: dto.actif,
   };
 }

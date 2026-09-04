@@ -245,6 +245,7 @@
     "yearClosure": "Year closure",
     "reEnrollment": "Re-enrolment",
     "annualBulletins": "Annual report cards",
+    "classAllocation": "Class allocation",
     "quiz": "Quiz",
     "allQuizzes": "All Quizzes",
     "quizBuilder": "Builder",
@@ -260,7 +261,10 @@
     "canteen": "Canteen",
     "finance": "Finance",
     "payments": "Payments",
+    "paymentsTable": "Payments table",
+    "salariesTable": "Salaries table",
     "expenses": "Expenses",
+    "feeTypes": "Fee types",
     "treasury": "Treasury",
     "cashRegister": "Cash register",
     "invoices": "Invoices",
@@ -300,7 +304,8 @@
     "messages": "Messages",
     "scholarships": "Scholarships",
     "forecasts": "Forecasts",
-    "personnel": "Staff"
+    "personnel": "Staff",
+    "more": "More"
   },
   "auth": {
     "login": "Login",
@@ -310,6 +315,7 @@
     "forgotPassword": "Forgot password?",
     "loginButton": "Sign in",
     "loginError": "Incorrect credentials",
+    "changePassword": "Change password",
     "resetPassword": "Reset password",
     "newPassword": "New password",
     "confirmPassword": "Confirm password",
@@ -399,7 +405,16 @@
     "enrolling": "Enrolling...",
     "enroll": "Enroll student",
     "hasBeenAdded": "has been added",
-    "notAssigned": "Not assigned"
+    "notAssigned": "Not assigned",
+    "blocked": "Blocked",
+    "block": "Block",
+    "unblock": "Unblock",
+    "blockConfirmMsg": "Are you sure you want to block",
+    "unblockConfirmMsg": "Are you sure you want to unblock",
+    "blockHint": "The student will be set to \"Inactif\".",
+    "unblockHint": "The student will be set back to \"Actif\".",
+    "studentBlocked": "Student blocked",
+    "studentUnblocked": "Student unblocked"
   },
   "teachers": {
     "title": "Teacher Management",
@@ -1751,7 +1766,118 @@
     "myChildren": "My children",
     "noChild": "No children associated",
     "noAbsence": "No absence recorded",
-    "scheduleUnavailable": "Schedule not available"
+    "scheduleUnavailable": "Schedule not available",
+    "loadError": "Could not load your children",
+    "loadErrorHint": "Please try again in a moment.",
+    "contactAdmin": "Contact the school office to link your account to your children.",
+    "more": "More",
+    "tabs": {
+      "homework": "Homework",
+      "grades": "Grades",
+      "absences": "Absences",
+      "schedule": "Schedule",
+      "report": "Report card",
+      "announcements": "Announcements",
+      "payments": "Payments"
+    },
+    "kpi": {
+      "averageT1": "Term 1 average",
+      "absences": "Absences",
+      "remainingDue": "Amount due",
+      "unsettledPayments": "Unsettled payments"
+    },
+    "grades": {
+      "empty": "No grades for this term",
+      "exam": "Exam",
+      "grade": "Grade",
+      "observation": "Remark"
+    },
+    "absencesTab": {
+      "total": "Total",
+      "absences": "Absences",
+      "late": "Late arrivals",
+      "justified": "Justified",
+      "session": "Session",
+      "reason": "Reason",
+      "isJustified": "Justified",
+      "justifiedYes": "Justified",
+      "justifiedNo": "Not justified",
+      "noSession": "Session not specified"
+    },
+    "report": {
+      "unavailable": "Report card not available for this term",
+      "generalAverage": "Overall average",
+      "classAverage": "Class average",
+      "rank": "Rank",
+      "reportOf": "Report card of {{name}}",
+      "printHint": "The full report card details are available in the printable version."
+    },
+    "scheduleTab": {
+      "noSubject": "Subject not set"
+    },
+    "homework": {
+      "empty": "No homework yet",
+      "dueOn": "Due on {{date}}",
+      "outOf": "out of {{points}} points",
+      "statement": "Instructions",
+      "teacherComment": "Teacher's comment",
+      "submit": "Submit homework",
+      "editCopy": "Edit my submission",
+      "myCopy": "My submission",
+      "correctedLocked": "Graded — no longer editable",
+      "closed": "Homework closed",
+      "answer": "Answer",
+      "answerPlaceholder": "Type the answer, or attach a file below.",
+      "attachment": "Attachment",
+      "uploading": "Uploading...",
+      "chooseFile": "Choose a file (photo, PDF...)",
+      "removeFile": "Remove file",
+      "replaceHint": "A submission was already sent on {{date}}. Sending again will replace it.",
+      "uploadError": "File upload failed",
+      "submitted": "Homework sent",
+      "state": {
+        "toSubmit": "To submit",
+        "submitted": "Submitted",
+        "submittedLate": "Submitted late",
+        "notSubmitted": "Not submitted",
+        "corrected": "Graded"
+      }
+    },
+    "install": {
+      "title": "Install EcoleNet",
+      "description": "Add the portal to your home screen for one-tap access.",
+      "iosHint": "Tap Share, then “Add to Home Screen” to open the portal like an app.",
+      "action": "Install",
+      "dismiss": "Dismiss"
+    },
+    "payments": {
+      "empty": "No payment recorded.",
+      "totalDue": "Total due",
+      "totalPaid": "Total paid",
+      "remaining": "Amount remaining",
+      "unsettled": "Unsettled items",
+      "feeType": "Fee",
+      "month": "Month",
+      "due": "Due",
+      "paid": "Paid",
+      "remainingShort": "Left",
+      "paidOn": "Paid on",
+      "method": "Method",
+      "reference": "Reference",
+      "status": {
+        "paid": "Paid",
+        "partial": "Partial",
+        "pending": "Pending",
+        "late": "Overdue"
+      },
+      "methods": {
+        "ESPECES": "Cash",
+        "VIREMENT": "Bank transfer",
+        "CHEQUE": "Cheque",
+        "CARTE_BANCAIRE": "Card",
+        "PRELEVEMENT": "Direct debit"
+      }
+    }
   },
   "scholarships": {
     "title": "Scholarships & Financial Aid",

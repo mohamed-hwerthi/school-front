@@ -201,7 +201,7 @@ export default function Configuration() {
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <label className="text-sm font-medium">{t("common.address")}</label>
-                  <Input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="Rue, Ville, Code Postal" />
+                  <Input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="Adresse de l'école" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">{t("schoolInfo.directorName")}</label>

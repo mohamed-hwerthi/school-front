@@ -55,9 +55,10 @@ const Configuration = lazy(() => import("./pages/Configuration"));
 const Tracabilite = lazy(() => import("./pages/Tracabilite"));
 const Statistiques = lazy(() => import("./pages/Statistiques"));
 const Depenses = lazy(() => import("./pages/Depenses"));
+const TypesFrais = lazy(() => import("./pages/TypesFrais"));
+const TableauPaiementsPage = lazy(() => import("./pages/TableauPaiementsPage"));
+const TableauSalairesPage = lazy(() => import("./pages/TableauSalairesPage"));
 const Tresorerie = lazy(() => import("./pages/Tresorerie"));
-const RemisesPenalites = lazy(() => import("./pages/RemisesPenalites"));
-const Relances = lazy(() => import("./pages/Relances"));
 const RapportsFinanciers = lazy(() => import("./pages/RapportsFinanciers"));
 const GestionCaisse = lazy(() => import("./pages/GestionCaisse"));
 
@@ -71,6 +72,7 @@ const EmploiDuTempsPage = lazy(() => import("./pages/EmploiDuTemps"));
 const VolumeHorairePage = lazy(() => import("./pages/VolumeHoraire"));
 const AnneeScolairePage = lazy(() => import("./pages/AnneeScolaire"));
 const ConseilClassePage = lazy(() => import("./pages/ConseilClasse"));
+const RepartitionClassesPage = lazy(() => import("./pages/RepartitionClasses"));
 const BilanAnnuelPage = lazy(() => import("./pages/BilanAnnuel"));
 const ClotureAnneePage = lazy(() => import("./pages/ClotureAnnee"));
 const ReinscriptionsPage = lazy(() => import("./pages/Reinscriptions"));
@@ -78,6 +80,7 @@ const ContratsPage = lazy(() => import("./pages/Contrats"));
 const FacturesPage = lazy(() => import("./pages/Factures"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 const VitrineSite = lazy(() => import("./pages/VitrineSite"));
 const VitrineAdminPage = lazy(() => import("./pages/VitrineAdmin"));
 
@@ -118,7 +121,6 @@ const FormationsPage = lazy(() => import("./pages/Formations"));
 const TeacherEvaluationsPage = lazy(() => import("./pages/TeacherEvaluations"));
 
 // Board 20: Documents
-const GenerationDocumentsPage = lazy(() => import("./pages/GenerationDocuments"));
 
 // Board 21: Intégrations
 const IntegrationsPage = lazy(() => import("./pages/Integrations"));
@@ -152,6 +154,14 @@ const S = ({ children }: { children: React.ReactNode }) => (
 const ADMIN_ROLES: UserRole[] = ["SUPER_ADMIN", "ADMIN"];
 const MANAGEMENT_ROLES: UserRole[] = ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"];
 const STAFF_ROLES: UserRole[] = ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"];
+
+/**
+ * Pages de pilotage reservees a l'encadrement : l'enseignant travaille sur ses
+ * propres classes et sa propre matiere, pas sur la configuration pedagogique
+ * (domaines) ni sur les synthese transversales (moyennes, suivi eleve).
+ * Masquer l'entree de menu ne suffit pas — l'URL doit etre fermee aussi.
+ */
+const ENCADREMENT_ROLES: UserRole[] = ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"];
 const FINANCE_ROLES: UserRole[] = ["SUPER_ADMIN", "ADMIN", "COMPTABLE"];
 
 /** Route with role guard */
@@ -181,6 +191,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/forgot-password" element={<Suspense fallback={<PageLoader />}><ForgotPassword /></Suspense>} />
             <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
+            <Route path="/change-password" element={<PrivateRoute><Suspense fallback={<PageLoader />}><ChangePassword /></Suspense></PrivateRoute>} />
             <Route path="/forbidden" element={<Forbidden />} />
             {/* Public pages */}
             <Route path="/vitrine/:slug" element={<Suspense fallback={<PageLoader />}><VitrineSite /></Suspense>} />
@@ -226,7 +237,7 @@ const App = () => (
               <Route path="eleves/ajouter" element={<G roles={MANAGEMENT_ROLES}><AddStudent /></G>} />
               <Route path="eleves/modifier/:id" element={<G roles={MANAGEMENT_ROLES}><EditStudent /></G>} />
               <Route path="eleves/:id" element={<G roles={[...STAFF_ROLES, "COMPTABLE"]}><StudentProfile /></G>} />
-              <Route path="eleves/:id/messages" element={<S><StudentMessages /></S>} />
+              <Route path="eleves/:id/messages" element={<G roles={STAFF_ROLES}><StudentMessages /></G>} />
 
               {/* Enseignants */}
               <Route path="enseignants" element={<G roles={MANAGEMENT_ROLES}><Teachers /></G>} />
@@ -246,8 +257,9 @@ const App = () => (
               {/* Inscriptions */}
               <Route path="inscriptions" element={<G roles={MANAGEMENT_ROLES}><InscriptionsPage /></G>} />
 
-              {/* Emploi du temps — all authenticated can view */}
-              <Route path="emploi-du-temps" element={<S><EmploiDuTempsPage /></S>} />
+              {/* Emploi du temps — grille de toute l'école, réservée au personnel.
+                  Le parent voit celui de son enfant dans le Portail Parent. */}
+              <Route path="emploi-du-temps" element={<G roles={STAFF_ROLES}><EmploiDuTempsPage /></G>} />
               <Route path="volume-horaire" element={<G roles={MANAGEMENT_ROLES}><VolumeHorairePage /></G>} />
               <Route path="emploi-salles" element={<G roles={MANAGEMENT_ROLES}><EmploiSalles /></G>} />
               <Route path="emploi-salles/ajouter" element={<G roles={MANAGEMENT_ROLES}><AddRoom /></G>} />
@@ -260,30 +272,33 @@ const App = () => (
               {/* Finance */}
               <Route path="finance" element={<G roles={[...FINANCE_ROLES, "DIRECTEUR"]}><FinancePaiement /></G>} />
               <Route path="finance/paiement" element={<G roles={FINANCE_ROLES}><FinancePaiement /></G>} />
+              <Route path="finance/types-frais" element={<G roles={FINANCE_ROLES}><TypesFrais /></G>} />
+              <Route path="finance/tableau" element={<G roles={FINANCE_ROLES}><TableauPaiementsPage /></G>} />
+              {/* Les fiches de paie exigent MANAGE_RH, que le COMPTABLE n'a pas. */}
+              <Route path="finance/salaires" element={<G roles={MANAGEMENT_ROLES}><TableauSalairesPage /></G>} />
               <Route path="finance/depenses" element={<G roles={FINANCE_ROLES}><Depenses /></G>} />
               <Route path="finance/tresorerie" element={<G roles={FINANCE_ROLES}><Tresorerie /></G>} />
-              <Route path="finance/remises-penalites" element={<G roles={FINANCE_ROLES}><RemisesPenalites /></G>} />
-              <Route path="finance/relances" element={<G roles={FINANCE_ROLES}><Relances /></G>} />
               <Route path="finance/rapports" element={<G roles={[...FINANCE_ROLES, "DIRECTEUR"]}><RapportsFinanciers /></G>} />
               <Route path="finance/caisse" element={<G roles={FINANCE_ROLES}><GestionCaisse /></G>} />
               <Route path="factures" element={<G roles={FINANCE_ROLES}><FacturesPage /></G>} />
 
               {/* Pédagogie */}
               <Route path="evaluations" element={<Navigate to="/dashboard/examens" replace />} />
-              <Route path="saisie-notes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><SaisieNotesPage /></G>} />
-              <Route path="apercu-notes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ApercuNotesPage /></G>} />
-              <Route path="moyennes" element={<G roles={[...STAFF_ROLES, "PARENT"]}><MoyennesPage /></G>} />
-              <Route path="domaines" element={<G roles={[...STAFF_ROLES, "PARENT"]}><DomainesPage /></G>} />
-              <Route path="modules" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ModulesPage /></G>} />
-              <Route path="examens" element={<G roles={[...STAFF_ROLES, "PARENT"]}><ExamensPage /></G>} />
+              <Route path="saisie-notes" element={<G roles={STAFF_ROLES}><SaisieNotesPage /></G>} />
+              <Route path="apercu-notes" element={<G roles={STAFF_ROLES}><ApercuNotesPage /></G>} />
+              <Route path="moyennes" element={<G roles={ENCADREMENT_ROLES}><MoyennesPage /></G>} />
+              <Route path="domaines" element={<G roles={ENCADREMENT_ROLES}><DomainesPage /></G>} />
+              <Route path="modules" element={<G roles={STAFF_ROLES}><ModulesPage /></G>} />
+              <Route path="examens" element={<G roles={STAFF_ROLES}><ExamensPage /></G>} />
               <Route path="annee-scolaire" element={<G roles={MANAGEMENT_ROLES}><AnneeScolairePage /></G>} />
               <Route path="conseil-classe" element={<G roles={MANAGEMENT_ROLES}><ConseilClassePage /></G>} />
+              <Route path="repartition-classes" element={<G roles={MANAGEMENT_ROLES}><RepartitionClassesPage /></G>} />
               <Route path="bilan-annuel" element={<G roles={MANAGEMENT_ROLES}><BilanAnnuelPage /></G>} />
               <Route path="cloture" element={<G roles={MANAGEMENT_ROLES}><ClotureAnneePage /></G>} />
               <Route path="reinscriptions" element={<G roles={MANAGEMENT_ROLES}><ReinscriptionsPage /></G>} />
               <Route path="devoirs" element={<G roles={STAFF_ROLES}><DevoirsPage /></G>} />
-              <Route path="quiz" element={<G roles={STAFF_ROLES}><QuizManagementPage /></G>} />
-              <Route path="calendrier" element={<S><CalendrierPage /></S>} />
+              <Route path="quiz" element={<G roles={ENCADREMENT_ROLES}><QuizManagementPage /></G>} />
+              <Route path="calendrier" element={<G roles={[...STAFF_ROLES, "COMPTABLE"]}><CalendrierPage /></G>} />
 
               {/* Bulletins */}
               <Route path="bulletins-individuels" element={<G roles={MANAGEMENT_ROLES}><BulletinsIndividuelsPage /></G>} />
@@ -300,7 +315,6 @@ const App = () => (
               {/* Documents */}
               {/* <Route path="rapports" element={<G roles={MANAGEMENT_ROLES}><Rapports /></G>} /> */}
               <Route path="circulaires" element={<G roles={MANAGEMENT_ROLES}><Circulaires /></G>} />
-              <Route path="documents" element={<G roles={MANAGEMENT_ROLES}><GenerationDocumentsPage /></G>} />
 
               {/* Communication */}
               <Route path="notifications" element={<G roles={STAFF_ROLES}><NotificationsPage /></G>} />
@@ -317,7 +331,7 @@ const App = () => (
 
               {/* Analytics */}
               <Route path="analytics" element={<G roles={MANAGEMENT_ROLES}><AnalyticsDashboardPage /></G>} />
-              <Route path="suivi-eleve" element={<G roles={STAFF_ROLES}><SuiviElevePage /></G>} />
+              <Route path="suivi-eleve" element={<G roles={ENCADREMENT_ROLES}><SuiviElevePage /></G>} />
 
               {/* Intégrations */}
               <Route path="integrations" element={<G roles={ADMIN_ROLES}><IntegrationsPage /></G>} />
@@ -331,7 +345,9 @@ const App = () => (
               <Route path="tracabilite" element={<G roles={ADMIN_ROLES}><Tracabilite /></G>} />
               <Route path="statistique" element={<G roles={MANAGEMENT_ROLES}><Statistiques /></G>} />
 
-              <Route path="*" element={<S><Dashboard /></S>} />
+              {/* URL inconnue sous /dashboard : renvoyer chacun vers SON accueil.
+                  Avant, tout le monde tombait sur le tableau de bord ADMIN. */}
+              <Route path="*" element={<S><DashboardByRole /></S>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

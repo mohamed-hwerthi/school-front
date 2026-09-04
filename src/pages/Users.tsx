@@ -363,7 +363,11 @@ export default function UsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">{user.email}</td>
+                    <td className="py-3 px-4 hidden sm:table-cell text-muted-foreground">
+                      {user.email ?? (
+                        <span className="font-mono text-xs">{user.username}</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4">
                       <Badge variant="outline" className={`${ROLE_COLORS[user.role]}`}>
                         {ROLE_LABELS[user.role]}

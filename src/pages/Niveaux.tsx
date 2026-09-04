@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, Plus, X, Users, Trash2, Eye } from "lucide-react";
+import { GraduationCap, Plus, X, Users, Trash2, Eye, Settings2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useNiveaux, useCreateNiveau, useDeleteNiveau, useAddClasse, useRemoveClasse } from "@/hooks/useNiveaux";
+import { useClasses, useSetClasseCapacite } from "@/hooks/useClasses";
+import type { ClasseDTO } from "@/api/classes.api";
+import {
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useAllStudents } from "@/hooks/useStudents";
 import { NiveauxSkeleton } from "@/components/skeletons/NiveauxSkeleton";
 import { notify } from "@/lib/toast";
@@ -39,15 +45,92 @@ const fadeUp = {
   }),
 };
 
-function NiveauCard({ niveauId, nom, sections, students, index, onOpenClasse }: {
+/**
+ * Capacité d'accueil d'une section : le plafond d'élèves utilisé par la
+ * répartition de fin d'année. Vide = non plafonnée.
+ */
+function CapaciteDialog({
+  classe,
+  effectif,
+  onClose,
+}: {
+  classe: ClasseDTO;
+  effectif: number;
+  onClose: () => void;
+}) {
+  const [valeur, setValeur] = useState(classe.capacite == null ? "" : String(classe.capacite));
+  const setCapacite = useSetClasseCapacite();
+
+  const enregistrer = () => {
+    const brut = valeur.trim();
+    const capacite = brut === "" ? null : Number(brut);
+    if (capacite !== null && (!Number.isInteger(capacite) || capacite < 1)) {
+      notify.warning("La capacité doit être un nombre entier d'au moins 1");
+      return;
+    }
+    setCapacite.mutate(
+      { id: classe.id, capacite },
+      {
+        onSuccess: () => {
+          notify.success(
+            capacite == null
+              ? `Capacité de ${classe.fullName} : non plafonnée`
+              : `Capacité de ${classe.fullName} : ${capacite} élèves`,
+          );
+          onClose();
+        },
+        onError: (err: Error) => notify.error("Échec", err.message),
+      },
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Capacité de {classe.fullName}</DialogTitle>
+          <DialogDescription>
+            Nombre maximum d'élèves. Laissez vide pour ne pas plafonner. Effectif actuel :{" "}
+            {effectif}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="capacite">Capacité</Label>
+          <Input
+            id="capacite"
+            type="number"
+            min={1}
+            inputMode="numeric"
+            placeholder="Non plafonnée"
+            value={valeur}
+            onChange={(e) => setValeur(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && enregistrer()}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button onClick={enregistrer} disabled={setCapacite.isPending}>
+            Enregistrer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function NiveauCard({ niveauId, nom, sections, students, classes, index, onOpenClasse }: {
   niveauId: string;
   nom: string;
   sections: string[];
   students: Student[];
+  classes: ClasseDTO[];
   index: number;
   onOpenClasse: (classe: string) => void;
 }) {
   const [newSection, setNewSection] = useState("");
+  const [capaciteClasse, setCapaciteClasse] = useState<ClasseDTO | null>(null);
   const addClasse = useAddClasse();
   const removeClasse = useRemoveClasse();
   const deleteNiveau = useDeleteNiveau();
@@ -159,11 +242,13 @@ function NiveauCard({ niveauId, nom, sections, students, index, onOpenClasse }: 
         {sections.map((letter) => {
           const classeNom = `${prefix}${letter}`;
           const count = countByClasse(classeNom);
+          const classe = classes.find((c) => c.letter === letter);
+          const pleine = classe?.capacite != null && count > classe.capacite;
           return (
             <Badge
               key={letter}
               variant="outline"
-              className="gap-1 ps-1 pe-1 py-1 text-xs font-medium"
+              className={`gap-1 ps-1 pe-1 py-1 text-xs font-medium ${pleine ? "border-red-200 bg-red-50 text-red-700" : ""}`}
             >
               <button
                 onClick={() => onOpenClasse(classeNom)}
@@ -171,8 +256,24 @@ function NiveauCard({ niveauId, nom, sections, students, index, onOpenClasse }: 
                 title={`Voir les élèves de ${classeNom}`}
               >
                 <span>{classeNom}</span>
-                <span className="text-[10px] text-muted-foreground">({count})</span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({count}
+                  {classe?.capacite != null && `/${classe.capacite}`})
+                </span>
               </button>
+              {classe && (
+                <button
+                  onClick={() => setCapaciteClasse(classe)}
+                  className="rounded-full p-0.5 hover:bg-primary/10 hover:text-primary transition-colors"
+                  title={
+                    classe.capacite == null
+                      ? "Définir la capacité"
+                      : `Capacité : ${classe.capacite} élèves`
+                  }
+                >
+                  <Settings2 className="h-3 w-3" />
+                </button>
+              )}
               <button
                 onClick={() => handleRemove(letter)}
                 className="ms-0.5 rounded-full p-0.5 hover:bg-destructive/10 hover:text-destructive transition-colors"
@@ -184,6 +285,14 @@ function NiveauCard({ niveauId, nom, sections, students, index, onOpenClasse }: 
           );
         })}
       </div>
+
+      {capaciteClasse && (
+        <CapaciteDialog
+          classe={capaciteClasse}
+          effectif={countByClasse(`${prefix}${capaciteClasse.letter}`)}
+          onClose={() => setCapaciteClasse(null)}
+        />
+      )}
 
       <div className="flex gap-2">
         <Input
@@ -208,6 +317,7 @@ export default function Niveaux() {
   const { niveaux, isLoading } = useNiveaux();
   const createNiveau = useCreateNiveau();
   const { data: students = [] } = useAllStudents();
+  const { data: allClasses = [] } = useClasses();
   const [newNiveauNom, setNewNiveauNom] = useState("");
   const [niveauError, setNiveauError] = useState<string | null>(null);
   const [openClasse, setOpenClasse] = useState<string | null>(null);
@@ -287,6 +397,7 @@ export default function Niveaux() {
             nom={niveau.nom}
             sections={niveau.sections}
             students={students}
+            classes={allClasses.filter((c) => c.niveauId === niveau.id)}
             index={i}
             onOpenClasse={setOpenClasse}
           />

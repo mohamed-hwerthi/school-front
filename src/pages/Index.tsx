@@ -322,8 +322,9 @@ const Index = () => {
                   <div className="relative">
                     <Mail className={`absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground"}`} />
                     <input
-                      type="email"
-                      placeholder="nom@ecole.fr"
+                      type="text"
+                      autoComplete="username"
+                      placeholder="nom@ecole.fr ou matricule"
                       value={email}
                       onFocus={() => setFocused("email")}
                       onBlur={() => setFocused(null)}

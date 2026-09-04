@@ -18,14 +18,3 @@ export const devoirSchema = z.object({
 
 export type DevoirFormValues = z.infer<typeof devoirSchema>;
 
-export const ressourceSchema = z.object({
-  titre: z.string().trim().min(3, "Titre requis (min 3 caractères)"),
-  type: z.string().min(1, "Type requis"),
-  description: z.string().optional(),
-  url: z.string().optional(),
-  fichierUrl: z.string().optional(),
-  classeId: z.string().optional(),
-  moduleId: z.string().optional(),
-});
-
-export type RessourceFormValues = z.infer<typeof ressourceSchema>;

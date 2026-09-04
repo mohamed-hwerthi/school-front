@@ -29,7 +29,7 @@ import {
 import type { Teacher } from "@/types/teacher";
 import { SPECIALITES, STATUTS_ENSEIGNANT } from "@/types/teacher";
 
-type ImportRow = Omit<Teacher, "id" | "dateEmbauche">;
+type ImportRow = Omit<Teacher, "id" | "dateEmbauche" | "matricule">;
 type FieldKey = keyof ImportRow;
 type CellErrors = Partial<Record<FieldKey, string>>;
 type RawRow = { [K in FieldKey]: string };

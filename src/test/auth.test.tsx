@@ -84,7 +84,7 @@ describe("Auth flow — Login page", () => {
   it("renders email and password fields", async () => {
     await renderLoginPage();
 
-    expect(screen.getByPlaceholderText("nom@ecole.fr")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("nom@ecole.fr ou matricule")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
   });
 
@@ -124,14 +124,32 @@ describe("Auth flow — Login page", () => {
     });
   });
 
-  it("Zod schema validates email format", () => {
+  it("Zod schema accepte un matricule comme identifiant", () => {
+    // Les comptes portail se connectent avec le matricule de l'élève :
+    // le champ ne peut donc plus exiger un email.
     const result = loginSchema.safeParse({
-      email: "not-an-email",
+      email: "ELV-2026-00042",
+      password: "pass123",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("Zod schema accepte toujours un email", () => {
+    const result = loginSchema.safeParse({
+      email: "user@example.com",
+      password: "pass123",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("Zod schema rejette un identifiant vide", () => {
+    const result = loginSchema.safeParse({
+      email: "",
       password: "pass123",
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toMatch(/email/i);
+      expect(result.error.issues[0].message).toMatch(/identifiant/i);
     }
   });
 

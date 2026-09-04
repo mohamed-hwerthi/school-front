@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { devoirsApi } from "@/api/devoirs.api";
 import { useAnneeContext } from "./useAnneeContext";
 import type {
@@ -7,14 +7,11 @@ import type {
   Soumission,
   CreateSoumissionRequest,
   CorrectionRequest,
-  RessourcePedagogique,
-  CreateRessourceRequest,
   DevoirStats,
 } from "@/types/devoir";
 
 const DEVOIRS_KEY = "devoirs";
 const SOUMISSIONS_KEY = "soumissions";
-const RESSOURCES_KEY = "ressources";
 const DEVOIR_STATS_KEY = "devoir-stats";
 
 function useYear() {
@@ -76,6 +73,27 @@ export function useSoumissionsByDevoir(devoirId?: string) {
   });
 }
 
+/**
+ * Soumissions de plusieurs devoirs, agrégées — c'est ce que sert le filtre
+ * « Tous les devoirs », l'API n'exposant qu'un listing par devoir.
+ *
+ * Les requêtes partagent le cache de {@link useSoumissionsByDevoir} : passer de
+ * « tous » à un devoir précis n'entraîne aucun appel supplémentaire.
+ */
+export function useSoumissionsForDevoirs(devoirIds: string[]) {
+  const results = useQueries({
+    queries: devoirIds.map((id) => ({
+      queryKey: [SOUMISSIONS_KEY, "devoir", id],
+      queryFn: () => devoirsApi.getSoumissionsByDevoir(id),
+    })),
+  });
+
+  return {
+    data: results.flatMap((r) => r.data ?? []),
+    isLoading: results.some((r) => r.isLoading),
+  };
+}
+
 export function useSoumissionsByEleve(eleveId?: string) {
   return useQuery<Soumission[]>({
     queryKey: [SOUMISSIONS_KEY, "eleve", eleveId],
@@ -120,41 +138,5 @@ export function useDevoirStats(devoirId?: string) {
     queryKey: [DEVOIR_STATS_KEY, devoirId],
     queryFn: () => devoirsApi.getDevoirStats(devoirId!),
     enabled: !!devoirId,
-  });
-}
-
-// ── Ressources ──
-
-export function useRessources(moduleId?: string) {
-  const year = useYear();
-  return useQuery<RessourcePedagogique[]>({
-    queryKey: [RESSOURCES_KEY, moduleId, year],
-    queryFn: () => devoirsApi.getRessources(moduleId, year),
-    enabled: !!year,
-  });
-}
-
-export function useCreateRessource() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateRessourceRequest) => devoirsApi.createRessource(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [RESSOURCES_KEY] }),
-  });
-}
-
-export function useUpdateRessource() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CreateRessourceRequest }) =>
-      devoirsApi.updateRessource(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [RESSOURCES_KEY] }),
-  });
-}
-
-export function useDeleteRessource() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => devoirsApi.deleteRessource(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [RESSOURCES_KEY] }),
   });
 }

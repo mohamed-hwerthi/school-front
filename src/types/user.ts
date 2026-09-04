@@ -2,7 +2,10 @@ import type { UserRole } from './auth';
 
 export interface UserItem {
   id: string;
-  email: string;
+  /** null pour les comptes portail rattachés à un élève. */
+  email: string | null;
+  /** Identifiant de connexion des comptes portail : le matricule de l'élève. */
+  username?: string | null;
   firstName: string;
   lastName: string;
   role: UserRole;

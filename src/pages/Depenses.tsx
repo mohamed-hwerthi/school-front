@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingDown,
@@ -13,16 +13,6 @@ import {
   BarChart3,
   RefreshCw,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
 import { notify } from "@/lib/toast";
 import { Input } from "@/components/ui/input";
 import { SearchInput } from "@/components/ui/search-input";
@@ -77,11 +67,6 @@ const fadeUp = {
     transition: { delay: i * 0.06, duration: 0.35 },
   }),
 };
-
-const CHART_COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-  "#06b6d4", "#ec4899", "#6366f1", "#14b8a6", "#a855f7",
-];
 
 const MODE_LABELS: Record<string, string> = {
   ESPECES: "Especes",
@@ -141,14 +126,6 @@ export default function Depenses() {
   };
   const [form, setForm] = useState<DepenseRequest>(emptyForm);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-
-  const chartData = useMemo(() => {
-    if (!statsData?.parCategorie) return [];
-    return statsData.parCategorie.map((c) => ({
-      name: c.categorieNom.length > 15 ? c.categorieNom.slice(0, 15) + "..." : c.categorieNom,
-      total: c.total,
-    }));
-  }, [statsData]);
 
   const resetFilters = () => {
     setSearch("");
@@ -364,30 +341,6 @@ export default function Depenses() {
           </div>
         </motion.div>
       </div>
-
-      {/* Chart */}
-      {chartData.length > 0 && (
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={3}
-          className="rounded-xl border border-border/50 bg-card p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Depenses par categorie</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData} layout="vertical" margin={{ left: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" tick={{ fontSize: 11 }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={120} />
-              <Tooltip
-                formatter={(value: number) => [`${value.toLocaleString()} ${CURRENCY}`, "Total"]}
-                contentStyle={{ borderRadius: 8, border: "1px solid hsl(var(--border))" }}
-              />
-              <Bar dataKey="total" radius={[0, 6, 6, 0]}>
-                {chartData.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
-      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">

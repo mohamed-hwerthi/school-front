@@ -2,13 +2,18 @@ export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'DIRECTEUR' | 'ENSEIGNANT' | 'C
 
 export interface AuthUser {
   id: string;
-  email: string;
+  /** null pour les comptes portail rattachés à un élève (pas d'email parent). */
+  email: string | null;
+  /** Identifiant de connexion des comptes portail : le matricule de l'élève. */
+  username?: string | null;
   firstName: string;
   lastName: string;
   role: UserRole;
   tenantId: string;
   tenantSlug?: string;
   isActive: boolean;
+  /** true tant que le titulaire n'a pas remplacé le mot de passe fourni par l'école. */
+  mustChangePassword?: boolean;
   /** Granted permissions (populated by /auth/me; empty for cached login response). */
   permissions?: string[];
   /** Class IDs the user can see — for ENSEIGNANT row-level scoping. */

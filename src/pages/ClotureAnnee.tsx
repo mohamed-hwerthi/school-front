@@ -42,7 +42,7 @@ export default function ClotureAnnee() {
   const cloturer = useCloturer();
 
   const [step, setStep] = useState(0);
-  const [anneeId, setAnneeId] = useState(0);
+  const [anneeId, setAnneeId] = useState("");
   const [creerSuivante, setCreerSuivante] = useState(true);
   const [labelSuivante, setLabelSuivante] = useState("");
   const [dateDebut, setDateDebut] = useState("");
@@ -114,18 +114,30 @@ export default function ClotureAnnee() {
               <PartyPopper className="h-10 w-10 text-emerald-500" />
               <h2 className="text-lg font-bold text-slate-800">Clôture effectuée</h2>
               <p className="text-sm text-slate-600">{result.message}</p>
-              {result.nouvelleAnneeLabel && (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
-                  Nouvelle année « {result.nouvelleAnneeLabel} » · {result.trimestresCrees} trimestres
-                </Badge>
-              )}
+              <div className="flex flex-wrap justify-center gap-2">
+                {result.nouvelleAnneeLabel && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                    Nouvelle année « {result.nouvelleAnneeLabel} » · {result.trimestresCrees} trimestres
+                  </Badge>
+                )}
+                {result.nbPromus > 0 && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                    {result.nbPromus} élève(s) promu(s)
+                  </Badge>
+                )}
+                {result.nbReinscrits > 0 && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                    {result.nbReinscrits} réinscrit(s)
+                  </Badge>
+                )}
+              </div>
               <Button
                 className="mt-2"
                 variant="outline"
                 onClick={() => {
                   setResult(null);
                   setStep(0);
-                  setAnneeId(0);
+                  setAnneeId("");
                 }}
               >
                 Terminer
@@ -167,8 +179,8 @@ export default function ClotureAnnee() {
                   <div>
                     <Label>Année scolaire</Label>
                     <Select
-                      value={anneeId ? String(anneeId) : ""}
-                      onValueChange={(v) => onSelectAnnee(Number(v))}
+                      value={anneeId}
+                      onValueChange={onSelectAnnee}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez une année ouverte" />
@@ -183,7 +195,7 @@ export default function ClotureAnnee() {
                     </Select>
                   </div>
 
-                  {anneeId && checksLoading && (
+                  {!!anneeId && checksLoading && (
                     <div className="flex items-center justify-center py-8 text-slate-400">
                       <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
@@ -309,10 +321,16 @@ export default function ClotureAnnee() {
                   </div>
                   <ul className="space-y-1 text-sm text-slate-700">
                     <li>• Clôture de l'année « {selectedAnnee?.label} »</li>
+                    <li>
+                      • Application des décisions du conseil : les élèves promus prennent leur
+                      nouveau niveau et la classe fixée dans « Répartition des classes », les
+                      redoublants restent en place
+                    </li>
                     {creerSuivante && (
                       <li>
                         • Création de l'année « {labelSuivante} » ({dateDebut} → {dateFin}) avec 3
-                        trimestres{activer ? ", activée immédiatement" : ""}
+                        trimestres{activer ? ", activée immédiatement" : ""}, et réinscription des
+                        élèves qui restent dans l'école
                       </li>
                     )}
                   </ul>

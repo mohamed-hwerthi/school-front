@@ -3,7 +3,6 @@ import {
   Users,
   UserCog,
   Calendar,
-  FileText,
   BookOpen,
   Settings,
   DollarSign,
@@ -12,8 +11,6 @@ import {
   Eye,
   PieChart,
   School,
-  BadgePercent,
-  Bell,
   BarChart3,
   Vault,
   UserCheck,
@@ -37,10 +34,9 @@ import {
   UtensilsCrossed,
   PenTool,
   FileQuestion,
-  UserPlus,
   Banknote,
+  Tag,
   Award,
-  FileDown,
   Target,
   MessageSquareText,
   Lock,
@@ -82,7 +78,9 @@ export const sidebarSections: NavSection[] = [
     icon: Home,
     color: "text-blue-500",
     items: [
-      { title: "Tableau de bord", titleKey: "nav.dashboard", icon: Home, url: "/dashboard" },
+      // Pour un PARENT, /dashboard ne fait que rediriger vers son portail :
+      // l'entrée serait un doublon sans destination propre.
+      { title: "Tableau de bord", titleKey: "nav.dashboard", icon: Home, url: "/dashboard", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "COMPTABLE"] },
       { title: "Mon école", titleKey: "nav.mySchool", icon: School, url: "/dashboard/ecole", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Portail Parent", titleKey: "nav.parentPortal", icon: GraduationCap, url: "/dashboard/portail-parent", roles: ["PARENT"] },
     ],
@@ -122,12 +120,13 @@ export const sidebarSections: NavSection[] = [
     color: "text-purple-500",
     items: [
       { title: "Devoirs", titleKey: "nav.homework", icon: PenTool, url: "/dashboard/devoirs", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
-      { title: "Domaines", titleKey: "nav.domains", icon: Palette, url: "/dashboard/domaines", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Matières", titleKey: "nav.subjects", icon: Library, url: "/dashboard/modules", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Examens", titleKey: "nav.exams", icon: FileQuestion, url: "/dashboard/examens", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Aperçu des notes", titleKey: "nav.gradesOverview", icon: LayoutGrid, url: "/dashboard/apercu-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Saisie des notes", titleKey: "nav.gradeEntry", icon: PenLine, url: "/dashboard/saisie-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
-      { title: "Moyennes", titleKey: "nav.averages", icon: BarChart3, url: "/dashboard/moyennes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Domaines", titleKey: "nav.domains", icon: Palette, url: "/dashboard/domaines", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
+      { title: "Matières", titleKey: "nav.subjects", icon: Library, url: "/dashboard/modules", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Examens", titleKey: "nav.exams", icon: FileQuestion, url: "/dashboard/examens", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Aperçu des notes", titleKey: "nav.gradesOverview", icon: LayoutGrid, url: "/dashboard/apercu-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      // Saisie = écriture (WRITE_NOTES) : un PARENT n'y a rien à faire.
+      { title: "Saisie des notes", titleKey: "nav.gradeEntry", icon: PenLine, url: "/dashboard/saisie-notes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
+      { title: "Moyennes", titleKey: "nav.averages", icon: BarChart3, url: "/dashboard/moyennes", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
   {
@@ -148,13 +147,14 @@ export const sidebarSections: NavSection[] = [
     color: "text-orange-500",
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
+      // Le travail de fin d'année d'abord (PV du conseil, moyennes annuelles),
+      // les vues statistiques en fin de liste.
+      { title: "Conseil de classe (PV)", titleKey: "nav.classCouncil", icon: GraduationCap, url: "/dashboard/conseil-classe" },
+      { title: "Répartition des classes", titleKey: "nav.classAllocation", icon: LayoutGrid, url: "/dashboard/repartition-classes" },
       { title: "Année scolaire", titleKey: "nav.schoolYear", icon: CalendarClock, url: "/dashboard/annee-scolaire" },
+      { title: "Clôture d'année", titleKey: "nav.yearClosure", icon: Lock, url: "/dashboard/cloture" },
       { title: "Stats réussite", titleKey: "nav.successStats", icon: TrendingUp, url: "/dashboard/stats-reussite" },
       { title: "Comparatif", titleKey: "nav.comparative", icon: Activity, url: "/dashboard/comparatif" },
-      { title: "Réinscriptions", titleKey: "nav.reEnrollment", icon: UserPlus, url: "/dashboard/reinscriptions" },
-      { title: "Conseil de classe", titleKey: "nav.classCouncil", icon: GraduationCap, url: "/dashboard/conseil-classe" },
-      { title: "Bulletins annuels", titleKey: "nav.annualBulletins", icon: FileText, url: "/dashboard/bulletins-annuels" },
-      { title: "Clôture d'année", titleKey: "nav.yearClosure", icon: Lock, url: "/dashboard/cloture" },
       { title: "Bilan annuel", titleKey: "nav.annualReview", icon: BarChart3, url: "/dashboard/bilan-annuel" },
     ],
   },
@@ -164,7 +164,7 @@ export const sidebarSections: NavSection[] = [
     icon: CalendarDays,
     color: "text-sky-500",
     items: [
-      { title: "Emploi du temps", titleKey: "nav.schedule", icon: Clock, url: "/dashboard/emploi-du-temps", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"] },
+      { title: "Emploi du temps", titleKey: "nav.schedule", icon: Clock, url: "/dashboard/emploi-du-temps", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"] },
       { title: "Volume horaire", titleKey: "nav.weeklyVolume", icon: Clock, url: "/dashboard/volume-horaire", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Salles", titleKey: "nav.rooms", icon: Calendar, url: "/dashboard/emploi-salles", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
@@ -175,7 +175,7 @@ export const sidebarSections: NavSection[] = [
     labelKey: "nav.quiz",
     icon: FileQuestion,
     color: "text-fuchsia-500",
-    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"],
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
       { title: "Tous les Quiz", titleKey: "nav.allQuizzes", icon: ClipboardList, url: "/dashboard/quiz?tab=quizzes" },
       { title: "Constructeur", titleKey: "nav.quizBuilder", icon: PenTool, url: "/dashboard/quiz?tab=builder" },
@@ -201,14 +201,18 @@ export const sidebarSections: NavSection[] = [
     color: "text-teal-500",
     roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "DIRECTEUR"],
     items: [
+      { title: "Tableau des paiements", titleKey: "nav.paymentsTable", icon: LayoutGrid, url: "/dashboard/finance/tableau", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      // MANAGE_RH requis par FichePaieController : le COMPTABLE ne l'a pas.
+      { title: "Tableau des salaires", titleKey: "nav.salariesTable", icon: Briefcase, url: "/dashboard/finance/salaires", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Paiements", titleKey: "nav.payments", icon: DollarSign, url: "/dashboard/finance", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      { title: "Types de frais", titleKey: "nav.feeTypes", icon: Tag, url: "/dashboard/finance/types-frais", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
       { title: "Dépenses", titleKey: "nav.expenses", icon: TrendingDown, url: "/dashboard/finance/depenses", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
       { title: "Trésorerie", titleKey: "nav.treasury", icon: Wallet, url: "/dashboard/finance/tresorerie", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
       { title: "Caisse", titleKey: "nav.cashRegister", icon: Vault, url: "/dashboard/finance/caisse", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
+      /* Masqués temporairement — les pages et leurs routes restent en place.
       { title: "Factures", titleKey: "nav.invoices", icon: Receipt, url: "/dashboard/factures", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Remises", titleKey: "nav.discounts", icon: BadgePercent, url: "/dashboard/finance/remises-penalites", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
-      { title: "Relances", titleKey: "nav.reminders", icon: Bell, url: "/dashboard/finance/relances", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE"] },
       { title: "Rapports", titleKey: "nav.reports", icon: BarChart3, url: "/dashboard/finance/rapports", roles: ["SUPER_ADMIN", "ADMIN", "COMPTABLE", "DIRECTEUR"] },
+      */
     ],
   },
   {
@@ -216,7 +220,9 @@ export const sidebarSections: NavSection[] = [
     labelKey: "nav.communication",
     icon: Megaphone,
     color: "text-rose-500",
-    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT", "PARENT"],
+    // Les deux pages sont réservées au personnel (cf. routes STAFF_ROLES) — un
+    // PARENT n'y voyait qu'un /forbidden. Ses annonces sont dans le portail.
+    roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"],
     items: [
       { title: "Annonces", titleKey: "nav.announcements", icon: Megaphone, url: "/dashboard/annonces" },
       { title: "Reunions", titleKey: "nav.meetings", icon: CalendarDays, url: "/dashboard/reunions" },
@@ -230,18 +236,18 @@ export const sidebarSections: NavSection[] = [
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR", "ENSEIGNANT"],
     items: [
       { title: "Dashboard", titleKey: "nav.analyticsDashboard", icon: Target, url: "/dashboard/analytics", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
-      { title: "Suivi élève", titleKey: "nav.studentTracking", icon: Users, url: "/dashboard/suivi-eleve" },
+      { title: "Suivi élève", titleKey: "nav.studentTracking", icon: Users, url: "/dashboard/suivi-eleve", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
       { title: "Statistiques", titleKey: "nav.statistics", icon: PieChart, url: "/dashboard/statistique", roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"] },
     ],
   },
   {
-    label: "Documents",
-    labelKey: "nav.documents",
-    icon: FileText,
+    // Section à item unique : l'en-tête mène directement à la page (cf. AppSidebar).
+    label: "Site vitrine",
+    labelKey: "nav.webShowcase",
+    icon: Eye,
     color: "text-slate-500",
     roles: ["SUPER_ADMIN", "ADMIN", "DIRECTEUR"],
     items: [
-      { title: "Génération", titleKey: "nav.generation", icon: FileDown, url: "/dashboard/documents" },
       { title: "Vitrine web", titleKey: "nav.webShowcase", icon: Eye, url: "/dashboard/vitrine" },
     ],
   },

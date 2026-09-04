@@ -7,6 +7,9 @@ export interface RecuData {
   reference: string;
   studentName: string;
   classe: string;
+  /** Parent / tuteur payeur — affiché sur le reçu s'il est renseigné. */
+  parentName?: string;
+  parentTelephone?: string;
   typeFrais: string;
   mois: string;
   anneeScolaire: string;
@@ -30,190 +33,285 @@ function fmtMontant(n: number): string {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) + " " + CURRENCY;
 }
 
+// ── Montant en toutes lettres (français) ────────────────────────────
+const UNITS = [
+  "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
+  "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize",
+  "dix-sept", "dix-huit", "dix-neuf",
+];
+const TENS = ["", "", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante", "quatre-vingt", "quatre-vingt"];
+
+function below100(n: number): string {
+  if (n < 20) return UNITS[n];
+  const t = Math.floor(n / 10);
+  const u = n % 10;
+  // 70-79 et 90-99 se construisent sur soixante / quatre-vingt + 10-19.
+  if (t === 7 || t === 9) {
+    return u === 1 && t === 7 ? `${TENS[t]} et onze` : `${TENS[t]}-${UNITS[10 + u]}`;
+  }
+  if (u === 0) return TENS[t] + (t === 8 ? "s" : "");
+  if (u === 1 && t !== 8) return `${TENS[t]} et un`;
+  return `${TENS[t]}-${UNITS[u]}`;
+}
+
+function below1000(n: number): string {
+  if (n < 100) return below100(n);
+  const c = Math.floor(n / 100);
+  const rest = n % 100;
+  if (rest === 0) return c === 1 ? "cent" : `${UNITS[c]} cents`;
+  return c === 1 ? `cent ${below100(rest)}` : `${UNITS[c]} cent ${below100(rest)}`;
+}
+
+function enLettres(n: number): string {
+  if (n === 0) return "zéro";
+  const parts: string[] = [];
+  const millions = Math.floor(n / 1_000_000);
+  const milliers = Math.floor((n % 1_000_000) / 1000);
+  const reste = n % 1000;
+  if (millions > 0) parts.push(millions === 1 ? "un million" : `${below1000(millions)} millions`);
+  if (milliers > 0) parts.push(milliers === 1 ? "mille" : `${below1000(milliers)} mille`);
+  if (reste > 0) parts.push(below1000(reste));
+  return parts.join(" ");
+}
+
+/**
+ * « cent cinquante dinars et 500 millimes ».
+ * Le libellé dinars/millimes n'est employé que pour le dinar tunisien ;
+ * toute autre devise retombe sur « <lettres> <CODE> » pour ne rien inventer.
+ */
+function montantEnLettres(n: number): string {
+  const entier = Math.floor(n);
+  const millimes = Math.round((n - entier) * 1000);
+  if (CURRENCY !== "TND") {
+    return `${enLettres(entier)} ${CURRENCY}`;
+  }
+  const base = `${enLettres(entier)} dinar${entier > 1 ? "s" : ""}`;
+  return millimes > 0 ? `${base} et ${millimes} millimes` : base;
+}
+
 export function generateRecuPDF(recu: RecuData, school: SchoolInfo) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
   const marginL = 20;
   const marginR = 20;
   const contentW = W - marginL - marginR;
+  const right = W - marginR;
+
+  // Palette strictement monochrome.
+  const BLACK: [number, number, number] = [0, 0, 0];
+  const GREY: [number, number, number] = [110, 110, 110];
+  const RULE: [number, number, number] = [170, 170, 170];
+  const FILL: [number, number, number] = [240, 240, 240];
+
+  const setText = (c: [number, number, number]) => doc.setTextColor(c[0], c[1], c[2]);
+  const setDraw = (c: [number, number, number]) => doc.setDrawColor(c[0], c[1], c[2]);
+  const setFill = (c: [number, number, number]) => doc.setFillColor(c[0], c[1], c[2]);
+
+  /** Intitulé de section : petites capitales sur filet plein. */
+  const section = (titre: string, y: number): number => {
+    setText(BLACK);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(titre.toUpperCase(), marginL, y);
+    setDraw(BLACK);
+    doc.setLineWidth(0.4);
+    doc.line(marginL, y + 1.8, right, y + 1.8);
+    return y + 7;
+  };
+
   let y = 20;
 
-  // ── Header band ──
-  doc.setFillColor(109, 40, 217); // violet-600
-  doc.rect(0, 0, W, 38, "F");
-
-  doc.setTextColor(255, 255, 255);
+  // ── En-tête ──────────────────────────────────────────────────────
+  setText(BLACK);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text(school.nom, marginL, 16);
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${school.adresse}`, marginL, 23);
-  doc.text(`Tel: ${school.telephone}  |  ${school.email}`, marginL, 29);
-
-  // "REÇU DE PAIEMENT" on the right
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("RECU DE PAIEMENT", W - marginR, 16, { align: "right" });
-
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`N° ${recu.reference}`, W - marginR, 23, { align: "right" });
-  doc.text(`Date: ${fmtDate(recu.datePaiement || new Date().toISOString().split("T")[0])}`, W - marginR, 29, { align: "right" });
-
-  y = 48;
-
-  // ── Student info box ──
-  doc.setTextColor(60, 60, 60);
-  doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(248, 248, 252);
-  doc.roundedRect(marginL, y, contentW, 28, 3, 3, "FD");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("Informations de l'eleve", marginL + 6, y + 7);
+  doc.setFontSize(15);
+  doc.text(school.nom, marginL, y);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  const col1 = marginL + 6;
-  const col2 = marginL + contentW / 2;
-
-  doc.text(`Nom : ${recu.studentName}`, col1, y + 15);
-  doc.text(`Classe : ${recu.classe}`, col2, y + 15);
-  doc.text(`Annee scolaire : ${recu.anneeScolaire}`, col1, y + 22);
-
-  y += 36;
-
-  // ── Payment details table ──
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(109, 40, 217);
-  doc.text("Details du paiement", marginL, y);
-  y += 6;
-
-  // Table header
-  const cols = [marginL, marginL + 55, marginL + 95, marginL + 130];
-  const colLabels = ["Designation", "Mois", "Montant du", "Montant paye"];
-
-  doc.setFillColor(109, 40, 217);
-  doc.rect(marginL, y, contentW, 8, "F");
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
-  colLabels.forEach((label, i) => {
-    doc.text(label, cols[i] + 3, y + 5.5);
-  });
-  y += 8;
-
-  // Table row
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(220, 220, 220);
-  doc.rect(marginL, y, contentW, 9, "FD");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(50, 50, 50);
-  doc.text(recu.typeFrais, cols[0] + 3, y + 6);
-  doc.text(MOIS_LABELS[recu.mois] ?? recu.mois, cols[1] + 3, y + 6);
-  doc.text(fmtMontant(recu.montantDu), cols[2] + 3, y + 6);
-
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(16, 185, 129); // emerald-500
-  doc.text(fmtMontant(recu.montantPaye), cols[3] + 3, y + 6);
-  y += 9;
-
-  // Totals
-  doc.setDrawColor(200, 200, 200);
-  doc.line(marginL, y + 2, marginL + contentW, y + 2);
-  y += 8;
-
-  doc.setTextColor(50, 50, 50);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Mode de paiement :", marginL + 3, y);
-  doc.setFont("helvetica", "bold");
-  doc.text(recu.modePaiement ?? "—", marginL + 45, y);
-
-  const solde = recu.montantDu - recu.montantPaye;
-
-  doc.setFont("helvetica", "normal");
-  doc.text("Reste a payer :", cols[2] + 3, y);
-  doc.setFont("helvetica", "bold");
-  if (solde <= 0) {
-    doc.setTextColor(16, 185, 129);
-    doc.text("0,00 " + CURRENCY, cols[3] + 3, y);
-  } else {
-    doc.setTextColor(239, 68, 68); // red-500
-    doc.text(fmtMontant(solde), cols[3] + 3, y);
+  setText(GREY);
+  let hy = y + 5.5;
+  if (school.adresse) {
+    doc.text(school.adresse, marginL, hy);
+    hy += 4;
   }
+  const contact = [school.telephone, school.email].filter(Boolean).join("  ·  ");
+  if (contact) doc.text(contact, marginL, hy);
+
+  // Bloc titre à droite
+  setText(BLACK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("REÇU DE PAIEMENT", right, y, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  setText(GREY);
+  doc.text(`N° ${recu.reference}`, right, y + 5.5, { align: "right" });
+  doc.text(
+    `Date : ${fmtDate(recu.datePaiement || new Date().toISOString().split("T")[0])}`,
+    right,
+    y + 9.5,
+    { align: "right" }
+  );
+
+  y = 42;
+  setDraw(BLACK);
+  doc.setLineWidth(0.6);
+  doc.line(marginL, y, right, y);
   y += 10;
 
-  // ── Status badge ──
-  const statutLabel = recu.statut;
-  if (statutLabel === "Paye" || statutLabel === "Payé") {
-    doc.setFillColor(209, 250, 229); // emerald-100
-    doc.setTextColor(4, 120, 87);
-  } else if (statutLabel === "Partiel") {
-    doc.setFillColor(254, 243, 199); // amber-100
-    doc.setTextColor(146, 64, 14);
-  } else {
-    doc.setFillColor(254, 226, 226); // red-100
-    doc.setTextColor(185, 28, 28);
-  }
-  const badgeW = doc.getTextWidth(statutLabel) + 12;
-  doc.roundedRect(marginL + 3, y - 1, badgeW, 7, 2, 2, "F");
+  // ── Élève & payeur ───────────────────────────────────────────────
+  y = section("Élève et payeur", y);
+
+  const labelW = 38;
+  const midX = marginL + contentW / 2;
+
+  /** Ligne « intitulé / valeur », sur une demi-largeur ou toute la largeur. */
+  const field = (label: string, value: string, x: number, yy: number) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setText(GREY);
+    doc.text(label, x, yy);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    setText(BLACK);
+    doc.text(value || "—", x + labelW, yy);
+  };
+
+  field("Élève", recu.studentName, marginL, y);
+  field("Classe", recu.classe, midX, y);
+  y += 6.5;
+  field("Année scolaire", recu.anneeScolaire, marginL, y);
+  if (recu.parentTelephone) field("Téléphone", recu.parentTelephone, midX, y);
+  y += 6.5;
+  // Le payeur figure sur le reçu : c'est lui qui s'en prévaut.
+  field("Parent / tuteur", recu.parentName || "—", marginL, y);
+
+  y += 12;
+
+  // ── Détail du paiement ───────────────────────────────────────────
+  y = section("Détail du paiement", y);
+
+  // Colonnes : désignation | mois | montant dû | montant payé
+  const cDesig = marginL + 2;
+  const cMois = marginL + 78;
+  const cDu = marginL + 112;
+  const cPaye = right - 2;
+  const rowH = 9;
+
+  // En-tête de tableau
+  setFill(FILL);
+  setDraw(RULE);
+  doc.setLineWidth(0.2);
+  doc.rect(marginL, y, contentW, rowH, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text(statutLabel, marginL + 3 + 6, y + 4);
+  setText(BLACK);
+  doc.text("Désignation", cDesig, y + 6);
+  doc.text("Mois", cMois, y + 6);
+  doc.text("Montant dû", cDu + 28, y + 6, { align: "right" });
+  doc.text("Montant payé", cPaye, y + 6, { align: "right" });
+  y += rowH;
 
-  y += 20;
-
-  // ── Amount in words box ──
-  doc.setFillColor(248, 248, 252);
-  doc.setDrawColor(200, 200, 200);
-  doc.roundedRect(marginL, y, contentW, 16, 3, 3, "FD");
+  // Ligne unique
+  doc.rect(marginL, y, contentW, rowH, "D");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text("Arrete le present recu a la somme de :", marginL + 6, y + 6);
+  doc.setFontSize(9);
+  doc.text(recu.typeFrais, cDesig, y + 6);
+  doc.text(recu.mois ? (MOIS_LABELS[recu.mois] ?? recu.mois) : "—", cMois, y + 6);
+  doc.text(fmtMontant(recu.montantDu), cDu + 28, y + 6, { align: "right" });
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(50, 50, 50);
-  doc.text(fmtMontant(recu.montantPaye), marginL + 6, y + 12);
+  doc.text(fmtMontant(recu.montantPaye), cPaye, y + 6, { align: "right" });
+  y += rowH + 8;
 
-  y += 26;
+  // ── Récapitulatif chiffré, aligné à droite ───────────────────────
+  const solde = Math.max(0, recu.montantDu - recu.montantPaye);
+  const boxW = 82;
+  const boxX = right - boxW;
 
-  // ── Signatures ──
+  const totalRow = (label: string, value: string, yy: number, strong = false) => {
+    doc.setFont("helvetica", strong ? "bold" : "normal");
+    doc.setFontSize(strong ? 10 : 9);
+    setText(BLACK);
+    doc.text(label, boxX + 3, yy);
+    doc.text(value, right - 3, yy, { align: "right" });
+  };
+
+  setDraw(RULE);
+  doc.setLineWidth(0.2);
+  doc.line(boxX, y - 5, right, y - 5);
+  totalRow("Montant dû", fmtMontant(recu.montantDu), y);
+  y += 6;
+  totalRow("Montant payé", fmtMontant(recu.montantPaye), y);
+  y += 3;
+  setDraw(BLACK);
+  doc.setLineWidth(0.4);
+  doc.line(boxX, y, right, y);
+  y += 6;
+  totalRow("Reste à payer", fmtMontant(solde), y, true);
+  y += 4;
+  doc.setLineWidth(0.4);
+  doc.line(boxX, y, right, y);
+
+  // Mode de paiement et statut, à gauche du récapitulatif
+  let ly = y - 19;
+  field("Mode de paiement", recu.modePaiement ?? "—", marginL, ly);
+  ly += 6.5;
+  field("Statut", recu.statut, marginL, ly);
+
+  y += 12;
+
+  // ── Arrêté en lettres ────────────────────────────────────────────
+  setDraw(RULE);
+  doc.setLineWidth(0.2);
+  const arretH = 16;
+  doc.rect(marginL, y, contentW, arretH, "D");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(120, 120, 120);
+  setText(GREY);
+  doc.text("Arrêté le présent reçu à la somme de :", marginL + 3, y + 5.5);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  setText(BLACK);
+  const lettres = montantEnLettres(recu.montantPaye);
+  // Première lettre en capitale, repli sur plusieurs lignes si nécessaire.
+  const phrase = lettres.charAt(0).toUpperCase() + lettres.slice(1);
+  doc.text(doc.splitTextToSize(phrase, contentW - 6), marginL + 3, y + 11.5);
 
-  doc.text("Cachet de l'etablissement", marginL + 10, y);
-  doc.text("Signature du responsable", W - marginR - 50, y);
+  y += arretH + 16;
 
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineDashPattern([1, 1], 0);
-  doc.line(marginL + 5, y + 22, marginL + 65, y + 22);
-  doc.line(W - marginR - 55, y + 22, W - marginR - 5, y + 22);
+  // ── Signatures ───────────────────────────────────────────────────
+  const sigW = 62;
+  const sigH = 26;
+  setDraw(RULE);
+  doc.setLineWidth(0.2);
+  doc.rect(marginL, y, sigW, sigH, "D");
+  doc.rect(right - sigW, y, sigW, sigH, "D");
 
-  // ── Footer ──
-  const footerY = doc.internal.pageSize.getHeight() - 15;
-  doc.setLineDashPattern([], 0);
-  doc.setDrawColor(200, 200, 200);
-  doc.line(marginL, footerY - 5, W - marginR, footerY - 5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  setText(GREY);
+  doc.text("Cachet de l'établissement", marginL + sigW / 2, y + 5, { align: "center" });
+  doc.text("Signature du responsable", right - sigW / 2, y + 5, { align: "center" });
 
+  // ── Pied de page ─────────────────────────────────────────────────
+  const footerY = H - 15;
+  setDraw(RULE);
+  doc.setLineWidth(0.2);
+  doc.line(marginL, footerY - 6, right, footerY - 6);
+
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.setTextColor(150, 150, 150);
-  doc.text(
-    `${school.nom} — ${school.adresse} — Tel: ${school.telephone} — ${school.email}`,
-    W / 2,
-    footerY,
-    { align: "center" }
-  );
-  doc.text("Ce document est un recu de paiement officiel.", W / 2, footerY + 4, {
+  setText(GREY);
+  const pied = [school.nom, school.adresse, school.telephone, school.email]
+    .filter(Boolean)
+    .join("  ·  ");
+  doc.text(pied, W / 2, footerY - 1, { align: "center" });
+  doc.text("Ce document est un reçu de paiement officiel.", W / 2, footerY + 3, {
     align: "center",
   });
 
-  // Save
   doc.save(`Recu_${recu.reference}.pdf`);
 }

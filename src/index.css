@@ -111,6 +111,10 @@
     font-optical-sizing: auto;
     font-feature-settings: 'cv11', 'ss01';
     letter-spacing: -0.011em;
+    /* Installee sur mobile, l'app ne doit jamais glisser lateralement : un
+       tableau trop large defile dans son propre conteneur .overflow-x-auto,
+       pas au niveau de la page. */
+    overflow-x: hidden;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);

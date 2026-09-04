@@ -31,5 +31,9 @@ export interface ClotureResult {
   nouvelleAnneeId: string | null;
   nouvelleAnneeLabel: string | null;
   trimestresCrees: number;
+  /** Élèves promus au niveau supérieur par cette clôture. */
+  nbPromus: number;
+  /** Élèves inscrits dans l'année créée (promus et redoublants). */
+  nbReinscrits: number;
   message: string;
 }

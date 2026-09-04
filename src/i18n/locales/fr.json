@@ -248,6 +248,7 @@
     "yearClosure": "Clôture d'année",
     "reEnrollment": "Réinscriptions",
     "annualBulletins": "Bulletins annuels",
+    "classAllocation": "Répartition des classes",
     "quiz": "Quiz",
     "allQuizzes": "Tous les Quiz",
     "quizBuilder": "Constructeur",
@@ -263,7 +264,10 @@
     "canteen": "Cantine",
     "finance": "Finance",
     "payments": "Paiements",
+    "paymentsTable": "Tableau des paiements",
+    "salariesTable": "Tableau des salaires",
     "expenses": "Dépenses",
+    "feeTypes": "Types de frais",
     "treasury": "Trésorerie",
     "cashRegister": "Caisse",
     "invoices": "Factures",
@@ -303,7 +307,8 @@
     "messages": "Messagerie",
     "scholarships": "Bourses",
     "forecasts": "Prévisions",
-    "personnel": "Personnel"
+    "personnel": "Personnel",
+    "more": "Plus"
   },
   "auth": {
     "login": "Connexion",
@@ -313,6 +318,7 @@
     "forgotPassword": "Mot de passe oublié ?",
     "loginButton": "Se connecter",
     "loginError": "Identifiants incorrects",
+    "changePassword": "Changer le mot de passe",
     "resetPassword": "Réinitialiser le mot de passe",
     "newPassword": "Nouveau mot de passe",
     "confirmPassword": "Confirmer le mot de passe",
@@ -402,7 +408,16 @@
     "enrolling": "Inscription...",
     "enroll": "Inscrire l'élève",
     "hasBeenAdded": "a été ajouté",
-    "notAssigned": "Non assignée"
+    "notAssigned": "Non assignée",
+    "blocked": "Bloqué",
+    "block": "Bloquer",
+    "unblock": "Débloquer",
+    "blockConfirmMsg": "Êtes-vous sûr de vouloir bloquer",
+    "unblockConfirmMsg": "Êtes-vous sûr de vouloir débloquer",
+    "blockHint": "L'élève passera au statut « Inactif ».",
+    "unblockHint": "L'élève repassera au statut « Actif ».",
+    "studentBlocked": "Élève bloqué",
+    "studentUnblocked": "Élève débloqué"
   },
   "teachers": {
     "title": "Gestion des Enseignants",
@@ -1754,7 +1769,118 @@
     "myChildren": "Mes enfants",
     "noChild": "Aucun enfant associé",
     "noAbsence": "Aucune absence enregistrée",
-    "scheduleUnavailable": "Emploi du temps non disponible"
+    "scheduleUnavailable": "Emploi du temps non disponible",
+    "loadError": "Impossible de charger vos enfants",
+    "loadErrorHint": "Réessayez dans un instant.",
+    "contactAdmin": "Contactez l'administration pour lier votre compte à vos enfants.",
+    "more": "Plus",
+    "tabs": {
+      "homework": "Devoirs",
+      "grades": "Notes",
+      "absences": "Absences",
+      "schedule": "Emploi",
+      "report": "Bulletin",
+      "announcements": "Annonces",
+      "payments": "Paiements"
+    },
+    "kpi": {
+      "averageT1": "Moyenne T1",
+      "absences": "Absences",
+      "remainingDue": "Restant à payer",
+      "unsettledPayments": "Lignes non soldées"
+    },
+    "grades": {
+      "empty": "Aucune note pour ce trimestre",
+      "exam": "Examen",
+      "grade": "Note",
+      "observation": "Observation"
+    },
+    "absencesTab": {
+      "total": "Total",
+      "absences": "Absences",
+      "late": "Retards",
+      "justified": "Justifiées",
+      "session": "Séance",
+      "reason": "Motif",
+      "isJustified": "Justifiée",
+      "justifiedYes": "Justifiée",
+      "justifiedNo": "Non justifiée",
+      "noSession": "Séance non précisée"
+    },
+    "report": {
+      "unavailable": "Bulletin non disponible pour ce trimestre",
+      "generalAverage": "Moyenne générale",
+      "classAverage": "Moyenne classe",
+      "rank": "Rang",
+      "reportOf": "Bulletin de {{name}}",
+      "printHint": "Les détails complets du bulletin sont disponibles dans la version imprimable."
+    },
+    "scheduleTab": {
+      "noSubject": "Matière non renseignée"
+    },
+    "homework": {
+      "empty": "Aucun devoir pour le moment",
+      "dueOn": "À rendre pour le {{date}}",
+      "outOf": "sur {{points}} points",
+      "statement": "Énoncé",
+      "teacherComment": "Commentaire de l'enseignant",
+      "submit": "Rendre le devoir",
+      "editCopy": "Modifier ma copie",
+      "myCopy": "Ma copie",
+      "correctedLocked": "Copie corrigée — plus modifiable",
+      "closed": "Devoir clôturé",
+      "answer": "Réponse",
+      "answerPlaceholder": "Saisissez la réponse, ou joignez un fichier ci-dessous.",
+      "attachment": "Fichier joint",
+      "uploading": "Envoi en cours...",
+      "chooseFile": "Choisir un fichier (photo, PDF...)",
+      "removeFile": "Retirer le fichier",
+      "replaceHint": "Une copie a déjà été envoyée le {{date}}. L'envoyer à nouveau remplacera la précédente.",
+      "uploadError": "Envoi du fichier impossible",
+      "submitted": "Devoir envoyé",
+      "state": {
+        "toSubmit": "À rendre",
+        "submitted": "Rendu",
+        "submittedLate": "Rendu en retard",
+        "notSubmitted": "Non rendu",
+        "corrected": "Corrigé"
+      }
+    },
+    "install": {
+      "title": "Installer EcoleNet",
+      "description": "Ajoutez le portail à votre écran d'accueil pour y accéder en un geste.",
+      "iosHint": "Appuyez sur Partager puis « Sur l'écran d'accueil » pour ouvrir le portail comme une application.",
+      "action": "Installer",
+      "dismiss": "Masquer"
+    },
+    "payments": {
+      "empty": "Aucun paiement enregistré.",
+      "totalDue": "Total dû",
+      "totalPaid": "Total payé",
+      "remaining": "Restant à payer",
+      "unsettled": "Lignes non soldées",
+      "feeType": "Frais",
+      "month": "Mois",
+      "due": "Dû",
+      "paid": "Payé",
+      "remainingShort": "Reste",
+      "paidOn": "Payé le",
+      "method": "Mode",
+      "reference": "Référence",
+      "status": {
+        "paid": "Payé",
+        "partial": "Partiel",
+        "pending": "En attente",
+        "late": "En retard"
+      },
+      "methods": {
+        "ESPECES": "Espèces",
+        "VIREMENT": "Virement",
+        "CHEQUE": "Chèque",
+        "CARTE_BANCAIRE": "Carte bancaire",
+        "PRELEVEMENT": "Prélèvement"
+      }
+    }
   },
   "scholarships": {
     "title": "Bourses et aides financières",

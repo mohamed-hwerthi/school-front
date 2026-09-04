@@ -231,7 +231,9 @@ export default function AnnoncesPage() {
     };
     if (form.classeId) payload.classeId = form.classeId;
     if (form.niveauNom) payload.niveauNom = form.niveauNom;
-    if (form.fichierUrl) payload.fichierUrl = form.fichierUrl;
+    // En modification, la chaîne vide est envoyée telle quelle : c'est ainsi
+    // que le retrait d'une pièce jointe est signalé au serveur.
+    if (form.fichierUrl || editId) payload.fichierUrl = form.fichierUrl ?? "";
     if (form.dateExpiration) payload.dateExpiration = form.dateExpiration;
 
     if (editId) {
@@ -302,7 +304,7 @@ export default function AnnoncesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -311,7 +313,7 @@ export default function AnnoncesPage() {
             {t("announcements.subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {smsCredits && (
             <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
               smsCredits.remaining <= 0
@@ -325,7 +327,7 @@ export default function AnnoncesPage() {
             </div>
           )}
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="min-w-0 flex-1 sm:w-[160px] sm:flex-none">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>

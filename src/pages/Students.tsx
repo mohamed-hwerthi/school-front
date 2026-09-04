@@ -21,8 +21,11 @@ import {
   MoreHorizontal,
   X,
   ShieldAlert,
+  ShieldCheck,
+  Ban,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { SearchInput } from "@/components/ui/search-input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +52,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useStudentsPaged, useAllStudents, useDeleteStudent } from "@/hooks/useStudents";
+import {
+  useStudentsPaged,
+  useAllStudents,
+  useDeleteStudent,
+  useSetStudentBlocked,
+} from "@/hooks/useStudents";
 import { StudentsListSkeleton } from "@/components/skeletons/StudentsListSkeleton";
 import { ExcelImportDialog } from "@/components/students/ExcelImportDialog";
 import { STATUTS } from "@/types/student";
@@ -94,7 +102,8 @@ export default function Students() {
     search: appliedSearch || undefined,
     niveau: filterNiveau !== "all" ? filterNiveau : undefined,
     classe: filterClasse !== "all" ? filterClasse : undefined,
-    status: filterStatut !== "all" ? filterStatut : undefined,
+    status: filterStatut !== "all" && filterStatut !== "blocked" ? filterStatut : undefined,
+    blocked: filterStatut === "blocked" ? true : undefined,
   });
 
   // Full list for stats (cached separately)
@@ -102,8 +111,10 @@ export default function Students() {
 
   // Mutations
   const deleteMutation = useDeleteStudent();
+  const blockMutation = useSetStudentBlocked();
 
   const [deleteStudentTarget, setDeleteStudentTarget] = useState<Student | null>(null);
+  const [blockStudentTarget, setBlockStudentTarget] = useState<Student | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
   const students = pagedData?.content ?? [];
@@ -157,8 +168,27 @@ export default function Students() {
   const handleDelete = () => {
     if (!deleteStudentTarget) return;
     deleteMutation.mutate(deleteStudentTarget.id, {
-      onSuccess: () => setDeleteStudentTarget(null),
+      onSuccess: () => {
+        toast.success(t("students.studentDeleted"));
+        setDeleteStudentTarget(null);
+      },
+      onError: (e: Error) => toast.error(e.message || t("common.error")),
     });
+  };
+
+  const handleToggleBlock = () => {
+    if (!blockStudentTarget) return;
+    const blocked = !blockStudentTarget.estBloque;
+    blockMutation.mutate(
+      { id: blockStudentTarget.id, blocked },
+      {
+        onSuccess: () => {
+          toast.success(blocked ? t("students.studentBlocked") : t("students.studentUnblocked"));
+          setBlockStudentTarget(null);
+        },
+        onError: (e: Error) => toast.error(e.message || t("common.error")),
+      }
+    );
   };
 
 
@@ -252,7 +282,7 @@ export default function Students() {
             />
           <div className="flex flex-wrap items-center gap-2">
             <Select value={filterNiveau} onValueChange={(v) => { setFilterNiveau(v); setFilterClasse("all"); setCurrentPage(0); }}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="min-w-0 flex-1 sm:w-[150px] sm:flex-none">
                 <Filter className="h-3.5 w-3.5 me-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Niveau" />
               </SelectTrigger>
@@ -262,7 +292,7 @@ export default function Students() {
               </SelectContent>
             </Select>
             <Select value={filterClasse} onValueChange={(v) => { setFilterClasse(v); setCurrentPage(0); }}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="min-w-0 flex-1 sm:w-[130px] sm:flex-none">
                 <SelectValue placeholder="Classe" />
               </SelectTrigger>
               <SelectContent>
@@ -271,12 +301,13 @@ export default function Students() {
               </SelectContent>
             </Select>
             <Select value={filterStatut} onValueChange={(v) => { setFilterStatut(v); setCurrentPage(0); }}>
-              <SelectTrigger className="w-[130px]">
+              <SelectTrigger className="min-w-0 flex-1 sm:w-[130px] sm:flex-none">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {STATUTS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                <SelectItem value="blocked">{t("students.blocked")}</SelectItem>
               </SelectContent>
             </Select>
             {hasFilters && (
@@ -371,9 +402,17 @@ export default function Students() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusConfig[student.statut]?.bg} ${statusConfig[student.statut]?.text}`}>
-                        {student.statut}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusConfig[student.statut]?.bg} ${statusConfig[student.statut]?.text}`}>
+                          {student.statut}
+                        </span>
+                        {student.estBloque && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                            <Ban className="h-3 w-3" />
+                            {t("students.blocked")}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-end" onClick={(e) => e.stopPropagation()}>
                       <div className="hidden sm:flex items-center justify-end gap-1">
@@ -388,6 +427,15 @@ export default function Students() {
                             onClick={() => navigate(`/dashboard/eleves/modifier/${student.id}`)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 text-muted-foreground ${student.estBloque ? "hover:text-emerald-600" : "hover:text-red-600"}`}
+                            title={student.estBloque ? t("students.unblock") : t("students.block")}
+                            onClick={() => setBlockStudentTarget(student)}
+                          >
+                            {student.estBloque ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                           </Button>
                         </PermissionGate>
                         <PermissionGate perms={["DELETE_STUDENTS"]}>
@@ -408,6 +456,13 @@ export default function Students() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => navigate(`/dashboard/eleves/modifier/${student.id}`)}>
                             <Edit className="h-4 w-4 me-2" /> {t("common.edit")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setBlockStudentTarget(student)}>
+                            {student.estBloque ? (
+                              <><ShieldCheck className="h-4 w-4 me-2" /> {t("students.unblock")}</>
+                            ) : (
+                              <><Ban className="h-4 w-4 me-2" /> {t("students.block")}</>
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setDeleteStudentTarget(student)} className="text-red-600">
                             <Trash2 className="h-4 w-4 me-2" /> {t("common.delete")}
@@ -498,6 +553,45 @@ export default function Students() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block / Unblock Confirmation Dialog */}
+      <Dialog open={!!blockStudentTarget} onOpenChange={(open) => !open && setBlockStudentTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {blockStudentTarget?.estBloque ? t("students.unblock") : t("students.block")}
+            </DialogTitle>
+            <DialogDescription>
+              {blockStudentTarget?.estBloque
+                ? t("students.unblockConfirmMsg")
+                : t("students.blockConfirmMsg")}{" "}
+              <span className="font-semibold text-foreground">
+                {blockStudentTarget?.prenom} {blockStudentTarget?.nom}
+              </span>
+              {" ? "}
+              {blockStudentTarget?.estBloque
+                ? t("students.unblockHint")
+                : t("students.blockHint")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild>
+              <Button variant="outline">{t("common.cancel")}</Button>
+            </DialogClose>
+            <Button
+              variant={blockStudentTarget?.estBloque ? "default" : "destructive"}
+              onClick={handleToggleBlock}
+              disabled={blockMutation.isPending}
+            >
+              {blockMutation.isPending
+                ? t("common.saving")
+                : blockStudentTarget?.estBloque
+                  ? t("students.unblock")
+                  : t("students.block")}
             </Button>
           </DialogFooter>
         </DialogContent>

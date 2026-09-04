@@ -16,7 +16,16 @@ import { useLanguage } from "@/hooks/useLanguage";
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isMobile, setOpenMobile } = useSidebar();
+
+  /**
+   * Sur mobile le tiroir est une feuille modale : sans ceci il reste ouvert
+   * par-dessus la page qu'on vient d'ouvrir, et il faut un second geste pour
+   * le refermer. Une application native referme toujours son menu apres un choix.
+   */
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   const { user, logout } = useAuth();
   const { t, isRTL } = useLanguage();
   const [search, setSearch] = useState("");
@@ -103,7 +112,7 @@ export function AppSidebar() {
       {/* ── Header ── */}
       <SidebarHeader className="px-4 pt-5 pb-3">
         <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to="/dashboard" onClick={closeOnMobile} className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 text-white text-sm font-extrabold shadow-lg shadow-purple-500/25">
               E
             </div>
@@ -116,12 +125,14 @@ export function AppSidebar() {
               </span>
             </div>
           </Link>
-          <button
-            onClick={toggleSidebar}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all group-data-[collapsible=icon]:hidden"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
+          {!isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all group-data-[collapsible=icon]:hidden"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -146,19 +157,18 @@ export function AppSidebar() {
             const Icon = section.icon;
             const isOpen = openSections[section.label] ?? false;
             const hasActiveItem = section.items.some((item) => isActive(item.url));
+            // Une section à item unique n'a rien à déplier : son en-tête mène
+            // directement à la page, au lieu d'exiger deux clics.
+            const isDirectLink = section.items.length === 1;
+            const headerClass = `flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 md:min-h-0 text-start transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:p-2.5 ${
+              hasActiveItem
+                ? "bg-primary/[0.06] text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            }`;
 
-            return (
-              <div key={section.label} className="group-data-[collapsible=icon]:mb-1">
-                {/* Section header */}
-                <button
-                  onClick={() => toggleSection(section.label)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:p-2.5 ${
-                    hasActiveItem
-                      ? "bg-primary/[0.06] text-foreground"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  }`}
-                >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+            const headerContent = (
+              <>
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                     hasActiveItem
                       ? "bg-primary/10"
                       : "bg-muted/60 group-hover:bg-muted"
@@ -170,16 +180,31 @@ export function AppSidebar() {
                   }`}>
                     {t(section.labelKey)}
                   </span>
-                  {section.items.length > 1 && (
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${
-                        isOpen ? "rotate-0" : "-rotate-90"
-                      }`}
-                    />
-                  )}
-                </button>
+                {!isDirectLink && (
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${
+                      isOpen ? "rotate-0" : "-rotate-90"
+                    }`}
+                  />
+                )}
+              </>
+            );
+
+            return (
+              <div key={section.label} className="group-data-[collapsible=icon]:mb-1">
+                {/* Section header — lien direct si un seul item, sinon dépliant */}
+                {isDirectLink ? (
+                  <Link to={section.items[0].url} onClick={closeOnMobile} className={headerClass}>
+                    {headerContent}
+                  </Link>
+                ) : (
+                  <button onClick={() => toggleSection(section.label)} className={headerClass}>
+                    {headerContent}
+                  </button>
+                )}
 
                 {/* Sub items with smooth expand */}
+                {!isDirectLink && (
                 <div
                   className={`group-data-[collapsible=icon]:hidden overflow-hidden transition-all duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                     isOpen ? "max-h-[600px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
@@ -193,7 +218,8 @@ export function AppSidebar() {
                         <Link
                           key={item.url}
                           to={item.url}
-                          className={`relative flex items-center gap-2.5 rounded-lg px-3 py-[8px] transition-all duration-150 ${
+                          onClick={closeOnMobile}
+                          className={`relative flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-[8px] transition-all duration-150 md:min-h-0 ${
                             active
                               ? "bg-primary/[0.08] text-primary font-semibold"
                               : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -204,12 +230,13 @@ export function AppSidebar() {
                             active ? "bg-primary scale-100" : "bg-border/60 scale-75"
                           }`} />
                           <ItemIcon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                          <span className={`text-[13px] truncate ${active ? "" : "font-medium"}`}>{t(item.titleKey)}</span>
+                          <span className={`truncate text-[13px] md:text-[12px] ${active ? "" : "font-medium"}`}>{t(item.titleKey)}</span>
                         </Link>
                       );
                     })}
                   </div>
                 </div>
+                )}
               </div>
             );
           })}
@@ -217,7 +244,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* ── Footer ── */}
-      <SidebarFooter className="px-3 pb-4 pt-2 group-data-[collapsible=icon]:px-2">
+      <SidebarFooter className="px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 group-data-[collapsible=icon]:px-2">
         <div className="rounded-2xl bg-gradient-to-r from-muted/60 to-muted/30 p-3 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:rounded-xl">
           <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
             <div className="relative">

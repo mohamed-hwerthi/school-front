@@ -248,6 +248,7 @@
     "yearClosure": "إغلاق السنة",
     "reEnrollment": "إعادة التسجيل",
     "annualBulletins": "الكشوف السنوية",
+    "classAllocation": "توزيع الأقسام",
     "quiz": "كويز",
     "allQuizzes": "جميع الكويزات",
     "quizBuilder": "المنشئ",
@@ -263,7 +264,10 @@
     "canteen": "المطعم",
     "finance": "المالية",
     "payments": "المدفوعات",
+    "paymentsTable": "جدول المدفوعات",
+    "salariesTable": "جدول الرواتب",
     "expenses": "المصاريف",
+    "feeTypes": "أنواع المصاريف",
     "treasury": "الخزينة",
     "cashRegister": "الصندوق",
     "invoices": "الفواتير",
@@ -303,7 +307,8 @@
     "messages": "الرسائل",
     "scholarships": "المنح",
     "forecasts": "التوقعات",
-    "personnel": "الموظفون"
+    "personnel": "الموظفون",
+    "more": "المزيد"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -313,6 +318,7 @@
     "forgotPassword": "نسيت كلمة المرور؟",
     "loginButton": "دخول",
     "loginError": "بيانات الدخول غير صحيحة",
+    "changePassword": "تغيير كلمة المرور",
     "resetPassword": "إعادة تعيين كلمة المرور",
     "newPassword": "كلمة مرور جديدة",
     "confirmPassword": "تأكيد كلمة المرور",
@@ -400,7 +406,16 @@
     "enrolling": "جاري التسجيل...",
     "enroll": "تسجيل التلميذ",
     "hasBeenAdded": "تمت إضافته",
-    "notAssigned": "غير معين"
+    "notAssigned": "غير معين",
+    "blocked": "محظور",
+    "block": "حظر",
+    "unblock": "رفع الحظر",
+    "blockConfirmMsg": "هل أنت متأكد من حظر التلميذ",
+    "unblockConfirmMsg": "هل أنت متأكد من رفع الحظر عن التلميذ",
+    "blockHint": "سيصبح التلميذ غير نشط.",
+    "unblockHint": "سيعود التلميذ إلى الحالة نشط.",
+    "studentBlocked": "تم حظر التلميذ",
+    "studentUnblocked": "تم رفع الحظر عن التلميذ"
   },
   "teachers": {
     "title": "إدارة الأساتذة",
@@ -1752,7 +1767,118 @@
     "myChildren": "أطفالي",
     "noChild": "لا يوجد أطفال مرتبطون",
     "noAbsence": "لا يوجد غياب مسجل",
-    "scheduleUnavailable": "الجدول الزمني غير متاح"
+    "scheduleUnavailable": "الجدول الزمني غير متاح",
+    "loadError": "تعذر تحميل بيانات أطفالك",
+    "loadErrorHint": "يرجى المحاولة بعد قليل.",
+    "contactAdmin": "اتصل بإدارة المدرسة لربط حسابك بأطفالك.",
+    "more": "المزيد",
+    "tabs": {
+      "homework": "الواجبات",
+      "grades": "العلامات",
+      "absences": "الغياب",
+      "schedule": "الجدول",
+      "report": "كشف النقاط",
+      "announcements": "الإعلانات",
+      "payments": "الدفوعات"
+    },
+    "kpi": {
+      "averageT1": "معدل الثلاثي الأول",
+      "absences": "الغياب",
+      "remainingDue": "المبلغ المتبقي",
+      "unsettledPayments": "دفوعات غير مسددة"
+    },
+    "grades": {
+      "empty": "لا توجد علامات لهذا الثلاثي",
+      "exam": "الامتحان",
+      "grade": "العلامة",
+      "observation": "ملاحظة"
+    },
+    "absencesTab": {
+      "total": "المجموع",
+      "absences": "الغياب",
+      "late": "التأخر",
+      "justified": "مبررة",
+      "session": "الحصة",
+      "reason": "السبب",
+      "isJustified": "مبررة",
+      "justifiedYes": "مبررة",
+      "justifiedNo": "غير مبررة",
+      "noSession": "الحصة غير محددة"
+    },
+    "report": {
+      "unavailable": "كشف النقاط غير متاح لهذا الثلاثي",
+      "generalAverage": "المعدل العام",
+      "classAverage": "معدل القسم",
+      "rank": "الرتبة",
+      "reportOf": "كشف نقاط {{name}}",
+      "printHint": "تفاصيل كشف النقاط الكاملة متاحة في النسخة القابلة للطباعة."
+    },
+    "scheduleTab": {
+      "noSubject": "المادة غير محددة"
+    },
+    "homework": {
+      "empty": "لا توجد واجبات حاليا",
+      "dueOn": "يسلم في {{date}}",
+      "outOf": "من {{points}} نقطة",
+      "statement": "نص الواجب",
+      "teacherComment": "ملاحظة المعلم",
+      "submit": "تسليم الواجب",
+      "editCopy": "تعديل نسختي",
+      "myCopy": "نسختي",
+      "correctedLocked": "تم التصحيح — لا يمكن التعديل",
+      "closed": "الواجب مغلق",
+      "answer": "الإجابة",
+      "answerPlaceholder": "اكتب الإجابة، أو أرفق ملفا أدناه.",
+      "attachment": "ملف مرفق",
+      "uploading": "جاري الإرسال...",
+      "chooseFile": "اختر ملفا (صورة، PDF...)",
+      "removeFile": "إزالة الملف",
+      "replaceHint": "تم إرسال نسخة في {{date}}. إعادة الإرسال ستستبدلها.",
+      "uploadError": "تعذر إرسال الملف",
+      "submitted": "تم إرسال الواجب",
+      "state": {
+        "toSubmit": "للتسليم",
+        "submitted": "تم التسليم",
+        "submittedLate": "سلم متأخرا",
+        "notSubmitted": "لم يسلم",
+        "corrected": "مصحح"
+      }
+    },
+    "install": {
+      "title": "تثبيت EcoleNet",
+      "description": "أضف البوابة إلى شاشتك الرئيسية للوصول إليها بلمسة واحدة.",
+      "iosHint": "اضغط على مشاركة ثم «إضافة إلى الشاشة الرئيسية» لفتح البوابة كتطبيق.",
+      "action": "تثبيت",
+      "dismiss": "إخفاء"
+    },
+    "payments": {
+      "empty": "لا توجد دفوعات مسجلة.",
+      "totalDue": "المجموع المستحق",
+      "totalPaid": "المجموع المدفوع",
+      "remaining": "المبلغ المتبقي",
+      "unsettled": "خطوط غير مسددة",
+      "feeType": "المعلوم",
+      "month": "الشهر",
+      "due": "مستحق",
+      "paid": "مدفوع",
+      "remainingShort": "المتبقي",
+      "paidOn": "دفع في",
+      "method": "الطريقة",
+      "reference": "المرجع",
+      "status": {
+        "paid": "مدفوع",
+        "partial": "جزئي",
+        "pending": "في الانتظار",
+        "late": "متأخر"
+      },
+      "methods": {
+        "ESPECES": "نقدا",
+        "VIREMENT": "تحويل بنكي",
+        "CHEQUE": "شيك",
+        "CARTE_BANCAIRE": "بطاقة بنكية",
+        "PRELEVEMENT": "اقتطاع"
+      }
+    }
   },
   "scholarships": {
     "title": "المنح والمساعدات المالية",

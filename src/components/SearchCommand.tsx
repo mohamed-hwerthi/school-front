@@ -18,7 +18,6 @@ import {
   Calendar,
   MessageSquare,
   Settings,
-  FileText,
   BarChart,
   Clock,
   Search,
@@ -44,7 +43,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Absences", href: "/absences", icon: Clock, keywords: ["retards", "presences"] },
   { label: "Messages", href: "/messages", icon: MessageSquare, keywords: ["communication", "sms"] },
   { label: "Rapports", href: "/reporting", icon: BarChart, keywords: ["statistiques", "analytics"] },
-  { label: "Documents", href: "/documents", icon: FileText, keywords: ["certificats", "attestations"] },
   { label: "Parametres", href: "/settings", icon: Settings, keywords: ["configuration", "reglages"] },
 ];
 

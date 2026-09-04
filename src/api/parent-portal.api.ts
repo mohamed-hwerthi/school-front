@@ -44,14 +44,69 @@ export interface ParentBulletin {
 
 export interface ParentEmploiDuTemps {
   id: string;
-  classeId: string;
-  creneauId: string;
   jourSemaine: number;
-  moduleId?: string;
-  enseignantId?: string;
+  creneauLabel?: string;
+  heureDebut?: string;
+  heureFin?: string;
+  moduleNom?: string;
+  enseignantNom?: string;
   salle?: string;
-  createdAt: string;
-  updatedAt: string;
+}
+
+export interface ChildSoumission {
+  id: string;
+  contenu?: string;
+  fichierUrl?: string;
+  dateSoumission?: string;
+  note?: number;
+  commentaireCorrection?: string;
+  corrige?: boolean;
+  enRetard?: boolean;
+}
+
+export interface ChildDevoir {
+  id: string;
+  titre: string;
+  description?: string;
+  moduleNom?: string;
+  enseignantNom?: string;
+  type?: string;
+  datePublication?: string;
+  dateLimite?: string;
+  pointsMax?: number;
+  /** Enonce joint par l'enseignant. */
+  fichierUrl?: string;
+  statut?: string;
+  /** false quand le devoir est cloture ou la copie deja corrigee. */
+  rendable: boolean;
+  soumission?: ChildSoumission | null;
+}
+
+export interface SubmitDevoirPayload {
+  contenu?: string;
+  fichierUrl?: string;
+}
+
+export interface ChildPaiementLigne {
+  id: string;
+  reference?: string;
+  typeFraisNom?: string;
+  mois?: string;
+  anneeScolaire?: string;
+  montantDu: number;
+  montantPaye: number;
+  reste: number;
+  datePaiement?: string;
+  modePaiement?: string;
+  statut?: string;
+}
+
+export interface ChildPaiements {
+  totalDu: number;
+  totalPaye: number;
+  reste: number;
+  nbEnRetard: number;
+  paiements: ChildPaiementLigne[];
 }
 
 export const parentPortalApi = {
@@ -77,14 +132,36 @@ export const parentPortalApi = {
     return res.data;
   },
 
+  // La classe est déduite côté serveur depuis la fiche de l'enfant.
   getChildBulletin: async (
     studentId: string,
-    classeId: string,
     trimestre = 1
   ): Promise<ParentBulletin> => {
     const res = await api.get<ParentBulletin>(`${BASE}/children/${studentId}/bulletin`, {
-      params: { classeId, trimestre },
+      params: { trimestre },
     });
+    return res.data;
+  },
+
+  getChildDevoirs: async (studentId: string): Promise<ChildDevoir[]> => {
+    const res = await api.get<ChildDevoir[]>(`${BASE}/children/${studentId}/devoirs`);
+    return res.data;
+  },
+
+  submitChildDevoir: async (
+    studentId: string,
+    devoirId: string,
+    payload: SubmitDevoirPayload
+  ): Promise<ChildDevoir> => {
+    const res = await api.post<ChildDevoir>(
+      `${BASE}/children/${studentId}/devoirs/${devoirId}/soumission`,
+      payload
+    );
+    return res.data;
+  },
+
+  getChildPaiements: async (studentId: string): Promise<ChildPaiements> => {
+    const res = await api.get<ChildPaiements>(`${BASE}/children/${studentId}/paiements`);
     return res.data;
   },
 

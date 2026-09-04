@@ -16,17 +16,18 @@ import { MOCK_TEACHERS } from "@/data/teachers";
 import { teachersApi } from "@/api/teachers.api";
 import env from "@/config/env";
 import { notify } from "@/lib/toast";
+import { useHasPermission } from "@/hooks/useRbac";
 
 const QUERY_KEY = ["teachers"];
 
 interface TeachersContextValue {
   teachers: Teacher[];
   isLoading: boolean;
-  addTeacher: (teacher: Omit<Teacher, "id" | "dateEmbauche">) => void;
+  addTeacher: (teacher: Omit<Teacher, "id" | "dateEmbauche" | "matricule">) => void;
   updateTeacher: (id: string, data: Partial<Teacher>) => void;
   deleteTeacher: (id: string) => void;
   getTeacher: (id: string) => Teacher | undefined;
-  importTeachers: (newTeachers: Omit<Teacher, "id" | "dateEmbauche">[]) => void;
+  importTeachers: (newTeachers: Omit<Teacher, "id" | "dateEmbauche" | "matricule">[]) => void;
 }
 
 const TeachersContext = createContext<TeachersContextValue | null>(null);
@@ -36,7 +37,7 @@ function MockTeachersProvider({ children }: { children: ReactNode }) {
   const [teachers, setTeachers] = useState<Teacher[]>(MOCK_TEACHERS);
 
   const addTeacher = useCallback(
-    (data: Omit<Teacher, "id" | "dateEmbauche">) => {
+    (data: Omit<Teacher, "id" | "dateEmbauche" | "matricule">) => {
       setTeachers((prev) => {
         const id = prev.length > 0 ? Math.max(...prev.map((t) => t.id)) + 1 : 1;
         const newTeacher: Teacher = {
@@ -66,7 +67,7 @@ function MockTeachersProvider({ children }: { children: ReactNode }) {
   );
 
   const importTeachers = useCallback(
-    (newTeachers: Omit<Teacher, "id" | "dateEmbauche">[]) => {
+    (newTeachers: Omit<Teacher, "id" | "dateEmbauche" | "matricule">[]) => {
       setTeachers((prev) => {
         let nextId = prev.length > 0 ? Math.max(...prev.map((t) => t.id)) + 1 : 1;
         const today = new Date().toISOString().split("T")[0];
@@ -97,10 +98,14 @@ function MockTeachersProvider({ children }: { children: ReactNode }) {
 // ─── API provider (VITE_ENABLE_MOCK=false) ──────────────────
 function ApiTeachersProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  // Ce provider enveloppe tout /dashboard : sans ce garde, un PARENT (qui n'a
+  // pas READ_TEACHERS) déclencherait un 403 sur chaque page qu'il ouvre.
+  const canReadTeachers = useHasPermission("READ_TEACHERS");
 
   const { data: teachers = [], isLoading } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: teachersApi.getAll,
+    enabled: canReadTeachers,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -143,7 +148,7 @@ function ApiTeachersProvider({ children }: { children: ReactNode }) {
   });
 
   const addTeacher = useCallback(
-    (data: Omit<Teacher, "id" | "dateEmbauche">) => {
+    (data: Omit<Teacher, "id" | "dateEmbauche" | "matricule">) => {
       createMutation.mutate(data);
     },
     [createMutation]
@@ -169,7 +174,7 @@ function ApiTeachersProvider({ children }: { children: ReactNode }) {
   );
 
   const importTeachers = useCallback(
-    (newTeachers: Omit<Teacher, "id" | "dateEmbauche">[]) => {
+    (newTeachers: Omit<Teacher, "id" | "dateEmbauche" | "matricule">[]) => {
       importMutation.mutate(newTeachers);
     },
     [importMutation]

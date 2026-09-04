@@ -1,9 +1,14 @@
+export type FrequenceFrais = "MENSUEL" | "TRIMESTRIEL" | "ANNUEL" | "UNIQUE";
+
 export type TypeFrais = {
   id: string;
   nom: string;
   montantMensuel: number;
+  frequence: FrequenceFrais;
   description: string;
   actif: boolean;
+  /** Niveaux concernés. Vide = tous les niveaux. */
+  niveauIds: string[];
 };
 
 export type StatutPaiement = "Payé" | "Partiel" | "En attente" | "En retard";

@@ -8,6 +8,9 @@ export interface FactureStudentInfo {
   nom: string;
   prenom: string;
   classe: string;
+  /** Parent / tuteur destinataire de la facture. */
+  parentName?: string;
+  parentTelephone?: string;
 }
 
 function fmtMontant(n: number): string {
@@ -67,7 +70,7 @@ export function generateFacturePDF(
   doc.setTextColor(60, 60, 60);
   doc.setDrawColor(200, 200, 200);
   doc.setFillColor(248, 248, 252);
-  doc.roundedRect(marginL, y, contentW, 22, 3, 3, "FD");
+  doc.roundedRect(marginL, y, contentW, 28, 3, 3, "FD");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -78,8 +81,13 @@ export function generateFacturePDF(
   doc.text(`Eleve : ${student.prenom} ${student.nom}`, marginL + 6, y + 14);
   doc.text(`Classe : ${student.classe}`, marginL + contentW / 2, y + 14);
   doc.text(`Annee scolaire : ${anneeScolaire}`, marginL + 6, y + 20);
+  // La facture est adressee au payeur : le parent doit y figurer.
+  doc.text(`Parent / tuteur : ${student.parentName || "—"}`, marginL + 6, y + 26);
+  if (student.parentTelephone) {
+    doc.text(`Tel : ${student.parentTelephone}`, marginL + contentW / 2, y + 26);
+  }
 
-  y += 30;
+  y += 36;
 
   // ── Payment table ──
   doc.setFont("helvetica", "bold");

@@ -48,6 +48,7 @@ export default function VitrineAdmin() {
   const { data: pages, isLoading: pagesLoading } = useVitrinePages();
   const { data: announcements, isLoading: annLoading } = useVitrineAnnouncements();
   const { data: unreadCount } = useVitrineUnreadCount();
+  const updateConfig = useUpdateVitrineConfig();
 
   if (configLoading || pagesLoading || annLoading) {
     return (
@@ -62,11 +63,11 @@ export default function VitrineAdmin() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("showcase.adminTitle")}</h1>
-          <p className="text-muted-foreground">Configurez le site web public de votre &eacute;tablissement</p>
+          <p className="text-muted-foreground">Configurez le site web public de votre établissement</p>
         </div>
         <div className="flex items-center gap-3">
           {config?.published ? (
-            <Badge variant="default" className="bg-green-600">Publi&eacute;</Badge>
+            <Badge variant="default" className="bg-green-600">Publié</Badge>
           ) : (
             <Badge variant="secondary">Brouillon</Badge>
           )}
@@ -85,8 +86,27 @@ export default function VitrineAdmin() {
             }}
           >
             <ExternalLink className="me-2 h-4 w-4" />
-            {config?.published ? "Voir le site" : "Pr&eacute;visualiser"}
+            {config?.published ? "Voir le site" : "Prévisualiser"}
           </Button>
+          {config && (
+            <Button
+              size="sm"
+              variant={config.published ? "outline" : "default"}
+              disabled={updateConfig.isPending}
+              onClick={() =>
+                updateConfig.mutate({ ...config, published: !config.published })
+              }
+            >
+              {updateConfig.isPending ? (
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+              ) : config.published ? (
+                <EyeOff className="me-2 h-4 w-4" />
+              ) : (
+                <Globe className="me-2 h-4 w-4" />
+              )}
+              {config.published ? "Dépublier" : "Publier le site"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -194,11 +214,11 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* General */}
       <Card>
         <CardHeader>
-          <CardTitle>Informations g&eacute;n&eacute;rales</CardTitle>
+          <CardTitle>Informations générales</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Nom de l'&eacute;tablissement</Label>
+            <Label>Nom de l'établissement</Label>
             <Input value={form.schoolDisplayName || ""} onChange={(e) => set("schoolDisplayName", e.target.value)} />
           </div>
           <div>
@@ -284,7 +304,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>T&eacute;l&eacute;phone</Label>
+            <Label>Téléphone</Label>
             <Input value={form.contactPhone || ""} onChange={(e) => set("contactPhone", e.target.value)} />
           </div>
           <div>
@@ -331,7 +351,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
             rel="noopener noreferrer"
             className="inline-flex text-xs text-blue-600 hover:underline"
           >
-            Trouver les coordonn&eacute;es sur OpenStreetMap &rarr;
+            Trouver les coordonnées sur OpenStreetMap →
           </a>
           {form.contactLatitude != null && form.contactLongitude != null && (
             <div className="overflow-hidden rounded-lg border">
@@ -342,7 +362,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
                 const bbox = `${lon - d},${lat - d},${lon + d},${lat + d}`;
                 return (
                   <iframe
-                    title="Aper&ccedil;u localisation"
+                    title="Aperçu localisation"
                     width="100%"
                     height="200"
                     style={{ border: 0 }}
@@ -359,7 +379,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* Social & Publication */}
       <Card>
         <CardHeader>
-          <CardTitle>R&eacute;seaux sociaux</CardTitle>
+          <CardTitle>Réseaux sociaux</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -387,12 +407,12 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* Hero — stats + badge */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Hero (en-t&ecirc;te du site)</CardTitle>
+          <CardTitle>Hero (en-tête du site)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Badge - libell&eacute;</Label>
+              <Label>Badge - libellé</Label>
               <Input value={form.heroBadgeLabel || ""} onChange={(e) => set("heroBadgeLabel", e.target.value)} placeholder="Certifie" />
             </div>
             <div>
@@ -423,7 +443,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* Marquee */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Bandeau d&eacute;filant (marquee)</CardTitle>
+          <CardTitle>Bandeau défilant (marquee)</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -440,7 +460,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* Trust strip */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Bande de confiance (4 chiffres cl&eacute;s)</CardTitle>
+          <CardTitle>Bande de confiance (4 chiffres clés)</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
@@ -464,7 +484,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* About */}
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Section &laquo; A propos &raquo;</CardTitle>
+          <CardTitle>Section « A propos »</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
@@ -568,7 +588,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* Testimonial */}
       <Card>
         <CardHeader>
-          <CardTitle>T&eacute;moignage</CardTitle>
+          <CardTitle>Témoignage</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
@@ -581,7 +601,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
               <Input value={form.testimonialAuthor || ""} onChange={(e) => set("testimonialAuthor", e.target.value)} placeholder="Salma B." />
             </div>
             <div>
-              <Label>R&ocirc;le</Label>
+              <Label>Rôle</Label>
               <Input value={form.testimonialRole || ""} onChange={(e) => set("testimonialRole", e.target.value)} placeholder="Parent d'eleve" />
             </div>
           </div>
@@ -591,7 +611,7 @@ function ConfigTab({ config }: { config: VitrineConfig }) {
       {/* CTA */}
       <Card>
         <CardHeader>
-          <CardTitle>Appel &agrave; l'action (CTA inscription)</CardTitle>
+          <CardTitle>Appel à l'action (CTA inscription)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
@@ -689,7 +709,7 @@ function PagesTab({ pages }: { pages: VitrinePage[] }) {
             <DialogFooter>
               <Button onClick={handleCreate} disabled={createPage.isPending}>
                 {createPage.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                Cr&eacute;er
+                Créer
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -703,7 +723,7 @@ function PagesTab({ pages }: { pages: VitrinePage[] }) {
               <div className="flex items-center gap-3">
                 <div>
                   <p className="font-medium">{page.title}</p>
-                  <p className="text-sm text-muted-foreground">/{page.slug} &middot; {page.sections?.length || 0} sections</p>
+                  <p className="text-sm text-muted-foreground">/{page.slug} · {page.sections?.length || 0} sections</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">

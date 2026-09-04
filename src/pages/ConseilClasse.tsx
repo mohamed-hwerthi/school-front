@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   Users,
   Printer,
+  Eye,
+  Download,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -33,7 +35,16 @@ import {
 } from "@/components/ui/table";
 import { useNiveaux } from "@/hooks/useNiveaux";
 import { useClasses } from "@/hooks/useClasses";
-import { useConseilClasse, useBulkCreatePassages } from "@/hooks/useConseilClasse";
+import {
+  useConseilClasse,
+  useBulkCreatePassages,
+  usePvAnnuel,
+  useCreatePvAnnuel,
+} from "@/hooks/useConseilClasse";
+import { useAllStudents } from "@/hooks/useStudents";
+import { useSchool } from "@/hooks/useSchool";
+import { buildPvAnnuelHtml, openPvAnnuel } from "@/lib/generatePvAnnuel";
+import { useAuth } from "@/hooks/useAuth";
 import { notify } from "@/lib/toast";
 import { getSelectedAnneeScolaire } from "@/lib/utils";
 import { DECISIONS, type DecisionType } from "@/types/passage";
@@ -68,7 +79,14 @@ export default function ConseilClasse() {
   const { data: classes = [] } = useClasses(selectedNiveau || undefined);
 
   const { data: conseil, isLoading: conseilLoading } = useConseilClasse(selectedClasse);
+  const { data: students = [] } = useAllStudents();
+  const { school } = useSchool();
+  const { user } = useAuth();
   const bulkCreate = useBulkCreatePassages();
+
+  const anneePv = conseil?.anneeScolaire ?? FALLBACK_ANNEE;
+  const { data: pvArchive, isLoading: pvLoading } = usePvAnnuel(selectedClasse, anneePv);
+  const creerPv = useCreatePvAnnuel(selectedClasse);
 
   // Editable decision/motif per student, seeded from the proposals.
   const [edits, setEdits] = useState<Record<number, RowEdit>>({});
@@ -120,6 +138,43 @@ export default function ConseilClasse() {
       seed[p.studentId] = { decision: p.decisionProposee, motif: "" };
     }
     setEdits(seed);
+  };
+
+  /**
+   * محضر الجلسة السنوي — le PV ne s'édite qu'une fois : on archive le document
+   * rendu, puis la classe n'a plus droit qu'à la consultation et au téléchargement.
+   */
+  const genererPv = () => {
+    if (!conseil || creerPv.isPending) return;
+    const parId = new Map(students.map((s) => [s.id, s]));
+    const contenu = buildPvAnnuelHtml({
+      classeNom: conseil.classeNom,
+      niveauNom: conseil.niveauNom,
+      anneeScolaire: anneePv,
+      school,
+      eleves: propositions.map((p) => ({
+        proposition: p,
+        decision: edits[p.studentId]?.decision ?? p.decisionProposee,
+        student: parId.get(p.studentId),
+      })),
+    });
+
+    creerPv.mutate(
+      {
+        anneeScolaire: anneePv,
+        classeNom: conseil.classeNom,
+        effectif: propositions.length,
+        contenu,
+        generePar: user ? `${user.firstName} ${user.lastName}`.trim() : undefined,
+      },
+      {
+        onSuccess: (pv) => {
+          notify.success("PV annuel édité", "Il est désormais consultable et téléchargeable.");
+          openPvAnnuel(pv.contenu);
+        },
+        onError: (err: Error) => notify.error("Édition du PV impossible", err.message),
+      },
+    );
   };
 
   const buildPayload = (p: PropositionPassage, edit: RowEdit) => {
@@ -327,10 +382,41 @@ export default function ConseilClasse() {
                   Propositions — {conseil.classeNom}
                 </CardTitle>
                 <div className="flex gap-1 print:hidden">
-                  <Button variant="ghost" size="sm" onClick={() => window.print()}>
-                    <Printer className="me-1.5 h-3.5 w-3.5" />
-                    Imprimer le PV
-                  </Button>
+                  {pvArchive ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openPvAnnuel(pvArchive.contenu)}
+                        title={`PV édité le ${new Date(pvArchive.createdAt).toLocaleDateString("fr-FR")}${pvArchive.generePar ? " par " + pvArchive.generePar : ""}`}
+                      >
+                        <Eye className="me-1.5 h-3.5 w-3.5" />
+                        Consulter le PV
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openPvAnnuel(pvArchive.contenu, { print: true })}
+                      >
+                        <Download className="me-1.5 h-3.5 w-3.5" />
+                        Télécharger
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={genererPv}
+                      disabled={pvLoading || creerPv.isPending || propositions.length === 0}
+                    >
+                      {creerPv.isPending ? (
+                        <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Printer className="me-1.5 h-3.5 w-3.5" />
+                      )}
+                      Générer le PV (محضر)
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={resetEdits} disabled={submitted}>
                     <RotateCcw className="me-1.5 h-3.5 w-3.5" />
                     Réinitialiser

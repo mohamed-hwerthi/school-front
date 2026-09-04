@@ -1,10 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Le champ accepte un email (personnel de l'école) ou un matricule
+ * (comptes portail des parents, ex. ELV-2026-00042), d'où l'absence de
+ * validation .email() : elle rejetterait les matricules.
+ */
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, "L'email est requis")
-    .email("Format d'email invalide"),
+    .min(1, "L'identifiant est requis"),
   password: z
     .string()
     .min(1, "Le mot de passe est requis"),

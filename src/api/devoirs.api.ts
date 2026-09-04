@@ -5,14 +5,11 @@ import type {
   Soumission,
   CreateSoumissionRequest,
   CorrectionRequest,
-  RessourcePedagogique,
-  CreateRessourceRequest,
   DevoirStats,
 } from "@/types/devoir";
 
 const DEVOIRS_BASE = "/devoirs";
 const SOUMISSIONS_BASE = "/soumissions";
-const RESSOURCES_BASE = "/ressources";
 
 export const devoirsApi = {
   // Devoirs
@@ -76,25 +73,4 @@ export const devoirsApi = {
 
   deleteSoumission: (id: string) => api.delete(`${SOUMISSIONS_BASE}/${id}`),
 
-  // Ressources
-  getRessources: async (moduleId?: string, anneeScolaire?: string): Promise<RessourcePedagogique[]> => {
-    const params = new URLSearchParams();
-    if (moduleId) params.set("moduleId", String(moduleId));
-    if (anneeScolaire) params.set("anneeScolaire", anneeScolaire);
-    const qs = params.toString();
-    const res = await api.get<RessourcePedagogique[]>(`${RESSOURCES_BASE}${qs ? `?${qs}` : ""}`);
-    return res.data;
-  },
-
-  createRessource: async (data: CreateRessourceRequest): Promise<RessourcePedagogique> => {
-    const res = await api.post<RessourcePedagogique>(RESSOURCES_BASE, data);
-    return res.data;
-  },
-
-  updateRessource: async (id: string, data: CreateRessourceRequest): Promise<RessourcePedagogique> => {
-    const res = await api.put<RessourcePedagogique>(`${RESSOURCES_BASE}/${id}`, data);
-    return res.data;
-  },
-
-  deleteRessource: (id: string) => api.delete(`${RESSOURCES_BASE}/${id}`),
 };
